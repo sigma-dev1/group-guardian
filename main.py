@@ -1,5 +1,4 @@
 from pyrogram import Client, filters
-import requests
 import re
 import config
 from datetime import datetime, timedelta
@@ -49,8 +48,7 @@ async def slang(bot, message):
             
 {sentence}
             """
-            if SPOILER:
-                await message.reply(msgtxt)
+            await message.reply(msgtxt)
 
 @Bot.on_message(filters.group & filters.text)
 async def spam_detection(bot, message):
