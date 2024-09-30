@@ -35,8 +35,8 @@ async def promote_helper(bot, message):
         if len(message.command) > 1:
             username = message.command[1].lstrip('@')
             user = await bot.get_users(username)
-            helpers[user.id] = True
-            await message.reply(f"{user.first_name} has been promoted to helper!")
+            helpers[user.id] = message.chat.id
+            await message.reply(f"{user.first_name} has been promoted to helper in this group!")
         else:
             await message.reply("Please provide a username to promote.")
     else:
@@ -44,7 +44,7 @@ async def promote_helper(bot, message):
 
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
-    if message.from_user.id in helpers or message.from_user.id in moderators:
+    if message.from_user.id in helpers and helpers[message.from_user.id] == message.chat.id:
         if message.reply_to_message:
             await message.reply_to_message.delete()
             await message.reply(f"Message deleted by {message.from_user.first_name}!")
@@ -55,7 +55,7 @@ async def delete_message(bot, message):
 
 @Bot.on_message(filters.group & filters.command("silenzia"))
 async def mute_user(bot, message):
-    if message.from_user.id in helpers or message.from_user.id in moderators:
+    if message.from_user.id in helpers and helpers[message.from_user.id] == message.chat.id:
         if len(message.command) > 1:
             identifier = message.command[1]
             if identifier.isdigit():
@@ -102,7 +102,7 @@ async def mute_user(bot, message):
 
 @Bot.on_message(filters.group & filters.command("espelli"))
 async def kick_user(bot, message):
-    if message.from_user.id in moderators:
+    if message.from_user.id in moderators and moderators[message.from_user.id] == message.chat.id:
         if len(message.command) > 1:
             identifier = message.command[1]
             if identifier.isdigit():
