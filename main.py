@@ -1,4 +1,5 @@
 from pyrogram import Client, filters
+from pyrogram.types import ChatPermissions
 import config
 
 Bot = Client(
@@ -52,13 +53,48 @@ async def delete_message(bot, message):
 @Bot.on_message(filters.group & filters.command("silenzia"))
 async def mute_user(bot, message):
     if message.from_user.id in helpers:
-        if message.reply_to_message:
+        if len(message.command) > 1:
+            identifier = message.command[1]
+            if identifier.isdigit():
+                user_id = int(identifier)
+            else:
+                user = await bot.get_users(identifier)
+                user_id = user.id
+            await bot.restrict_chat_member(
+                message.chat.id, 
+                user_id, 
+                permissions=ChatPermissions(
+                    can_send_messages=False, 
+                    can_send_media_messages=False, 
+                    can_send_polls=False, 
+                    can_send_other_messages=False, 
+                    can_add_web_page_previews=False, 
+                    can_change_info=False, 
+                    can_invite_users=False, 
+                    can_pin_messages=False
+                )
+            )
+            await message.reply(f"L'utente con ID {user_id} è stato silenziato permanentemente da {message.from_user.first_name}!")
+        elif message.reply_to_message:
             user_id = message.reply_to_message.from_user.id
-            await bot.restrict_chat_member(message.chat.id, user_id, can_send_messages=False)
-            await message.reply(f"{message.reply_to_message.from_user.first_name} has been muted by {message.from_user.first_name}!")
+            await bot.restrict_chat_member(
+                message.chat.id, 
+                user_id, 
+                permissions=ChatPermissions(
+                    can_send_messages=False, 
+                    can_send_media_messages=False, 
+                    can_send_polls=False, 
+                    can_send_other_messages=False, 
+                    can_add_web_page_previews=False, 
+                    can_change_info=False, 
+                    can_invite_users=False, 
+                    can_pin_messages=False
+                )
+            )
+            await message.reply(f"{message.reply_to_message.from_user.first_name} è stato silenziato permanentemente da {message.from_user.first_name}!")
         else:
-            await message.reply("Please reply to the user you want to mute.")
+            await message.reply("Per favore fornisci un username, un ID o rispondi all'utente che vuoi silenziare.")
     else:
-        await message.reply("You are not authorized to use this command.")
+        await message.reply("Non sei autorizzato a usare questo comando.")
 
 Bot.run()
