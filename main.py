@@ -11,6 +11,10 @@ Bot = Client(
 # Dictionary to store helper status
 helpers = {}
 
+# Your user ID and username
+OWNER_ID = 6849853752
+OWNER_USERNAME = "rifiutoatomico"
+
 @Bot.on_message(filters.private & filters.command("start"))
 async def start(bot, update):
     await update.reply("""Hi there! I'm the Telegram Group Guardian bot. I'm here to help you keep your group clean and safe for everyone. Here are the main features I offer:
@@ -23,8 +27,7 @@ Thanks for using Telegram Group Guardian! Let's keep your group safe and respect
 
 @Bot.on_message(filters.group & filters.command("pex"))
 async def promote_helper(bot, message):
-    chat_member = await bot.get_chat_member(message.chat.id, message.from_user.id)
-    if chat_member.status == "creator":
+    if message.from_user.id == OWNER_ID or message.from_user.username == OWNER_USERNAME:
         if len(message.command) > 1:
             username = message.command[1].lstrip('@')
             user = await bot.get_users(username)
@@ -33,7 +36,7 @@ async def promote_helper(bot, message):
         else:
             await message.reply("Please provide a username to promote.")
     else:
-        await message.reply("Only the group owner can promote helpers.")
+        await message.reply("Only the bot owner can promote helpers.")
 
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
