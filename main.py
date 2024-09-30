@@ -1,22 +1,22 @@
-from pyrogram import Client,filters
+from pyrogram import Client, filters
 import requests
 import re
-import config 
+import config
+from datetime import datetime, timedelta
 
-url = "https://api.safone.me/nsfw"
-SPOILER = config.SPOILER_MODE
 slangf = 'slang_words.txt'
 with open(slangf, 'r') as f:
     slang_words = set(line.strip().lower() for line in f)
 
 Bot = Client(
-    "antinude",
+    "group_guardian",
     bot_token=config.BOT_TOKEN,
     api_id=config.API_ID,
     api_hash=config.API_HASH
 )
 
-#-----------------------------------------------------------------
+# Dictionary to store the last message time for each user
+last_message_time = {}
 
 @Bot.on_message(filters.private & filters.command("start"))
 async def start(bot, update):
@@ -24,37 +24,11 @@ async def start(bot, update):
 
 • **Word Slagging:** I can detect and remove inappropriate language messages in your group. 
 
-• **Image Filtering:** I can also automatically detect and remove pornographic or NSFW images in your group. 
+• **Spam Detection:** I can detect and warn users who send duplicate messages within 10 minutes.
 
-To get started, simply add me to your Telegram group and promote me to admin 
+To get started, simply add me to your Telegram group and promote me to admin.
 
 Thanks for using Telegram Group Guardian! Let's keep your group safe and respectful. Powered by @NACBOTS""")
-
-#-----------------------------------------------------------------
-
-@Bot.on_message(filters.group & filters.photo)
-async def image(bot, message):
-    sender = await Bot.get_chat_member(message.chat.id, message.from_user.id)
-    isadmin = sender.privileges
-    if not isadmin:
-        x = await message.download()
-        files = {"image": open(x, "rb")}
-        roi = requests.post(url, files=files)
-        data = roi.json()
-        nsfw = data["data"]["is_nsfw"]
-        porn = data["data"]["porn"]
-        if nsfw:
-            name = message.from_user.first_name
-            await message.delete()
-            if SPOILER:
-                await message.reply_photo(x, caption=f"""**WARNING ⚠️** (nude photo)
-
- **{name}** sent a nude photo
-
-{porn}% porn""", has_spoiler = True)
-
-
-#-----------------------------------------------------------------
 
 @Bot.on_message(filters.group & filters.text)
 async def slang(bot, message):
@@ -71,13 +45,24 @@ async def slang(bot, message):
                 sentence = sentence.replace(word, f'||{word}||')
         if isslang:
             name = message.from_user.first_name
-            msgtxt = f"""{name} your message has been deleted due to the presence of inappropriate language. Here is a censored version of your message:
+            msgtxt = f"""{name}, your message has been deleted due to the presence of inappropriate language. Here is a censored version of your message:
             
 {sentence}
             """
             if SPOILER:
                 await message.reply(msgtxt)
 
-#--------------------------------------------------------------------------------------------------
+@Bot.on_message(filters.group & filters.text)
+async def spam_detection(bot, message):
+    user_id = message.from_user.id
+    current_time = datetime.now()
+
+    if user_id in last_message_time:
+        last_time = last_message_time[user_id]
+        if current_time - last_time < timedelta(minutes=10):
+            await message.reply(f"{message.from_user.first_name}, you are sending duplicate messages. Please refrain from spamming.")
+            return
+
+    last_message_time[user_id] = current_time
 
 Bot.run()
