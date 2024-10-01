@@ -1,5 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions
+import time
 import config
 import logging
 
@@ -23,31 +24,23 @@ OWNER_USERNAME = "rifiutoatomico"
 
 @Bot.on_message(filters.private & filters.command("start"))
 async def start(bot, message):
-    logging.info(f"Received /start command from {message.from_user.id}")
     if message.from_user.id == OWNER_ID:
-        await message.reply("""Ciao! Sono il bot Telegram Group Guardian. Sono qui per aiutarti a mantenere il tuo gruppo pulito e sicuro per tutti. Ecco le principali funzionalità che offro:
-
-• **Comandi per Helper:** Gli utenti possono eliminare messaggi e silenziare altri utilizzando i comandi del bot.
-
-Per iniziare, aggiungimi semplicemente al tuo gruppo Telegram e promuovimi ad admin.
-
-Grazie per aver utilizzato Telegram Group Guardian! Manteniamo il tuo gruppo sicuro e rispettoso. Powered by @NACBOTS""")
+        await message.reply("Ciao! Sono il bot Telegram Group Guardian, creato per SkyNetwork per la gestione dei gruppi. Questo bot è utilizzabile solo dallo staff di SkyNetwork.")
     else:
         await message.reply("Questo bot è privato e può essere utilizzato solo dal proprietario.")
 
 @Bot.on_message(filters.group & filters.command("pex"))
 async def promote_helper(bot, message):
-    logging.info(f"Received /pex command from {message.from_user.id} in chat {message.chat.id}")
     if message.from_user.id == OWNER_ID or message.from_user.username == OWNER_USERNAME:
         if len(message.command) > 1:
             username = message.command[1].lstrip('@')
             user = await bot.get_users(username)
             if "mod" in message.command:
                 moderators[user.id] = message.chat.id
-                await message.reply(f"{user.first_name} è stato promosso a moderatore in questo gruppo!")
+                await message.reply(f"⭐ {user.first_name} è stato promosso a moderatore in questo gruppo!")
             else:
                 helpers[user.id] = message.chat.id
-                await message.reply(f"{user.first_name} è stato promosso a helper in questo gruppo!")
+                await message.reply(f"⭐ {user.first_name} è stato promosso a helper in questo gruppo!")
         else:
             await message.reply("Per favore fornisci un username da promuovere.")
     else:
@@ -55,7 +48,6 @@ async def promote_helper(bot, message):
 
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
-    logging.info(f"Received /cancella command from {message.from_user.id} in chat {message.chat.id}")
     if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
         if message.reply_to_message:
             await message.reply_to_message.delete()
@@ -67,7 +59,6 @@ async def delete_message(bot, message):
 
 @Bot.on_message(filters.group & filters.command("silenzia"))
 async def mute_user(bot, message):
-    logging.info(f"Received /silenzia command from {message.from_user.id} in chat {message.chat.id}")
     if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
         if len(message.command) > 1:
             identifier = message.command[1]
@@ -90,7 +81,7 @@ async def mute_user(bot, message):
                     can_pin_messages=False
                 )
             )
-            await message.reply(f"L'utente con ID {user_id} è stato silenziato permanentemente da {message.from_user.first_name}!")
+            await message.reply(f"🔇 L'utente con ID {user_id} è stato silenziato permanentemente da {message.from_user.first_name}!")
         elif message.reply_to_message:
             user_id = message.reply_to_message.from_user.id
             await bot.restrict_chat_member(
@@ -107,7 +98,7 @@ async def mute_user(bot, message):
                     can_pin_messages=False
                 )
             )
-            await message.reply(f"{message.reply_to_message.from_user.first_name} è stato silenziato permanentemente da {message.from_user.first_name}!")
+            await message.reply(f"🔇 {message.reply_to_message.from_user.first_name} è stato silenziato permanentemente da {message.from_user.first_name}!")
         else:
             await message.reply("Per favore fornisci un username, un ID o rispondi all'utente che vuoi silenziare.")
     else:
@@ -115,7 +106,6 @@ async def mute_user(bot, message):
 
 @Bot.on_message(filters.group & filters.command("espelli"))
 async def kick_user(bot, message):
-    logging.info(f"Received /espelli command from {message.from_user.id} in chat {message.chat.id}")
     if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
         if len(message.command) > 1:
             identifier = message.command[1]
@@ -125,15 +115,28 @@ async def kick_user(bot, message):
                 user = await bot.get_users(identifier)
                 user_id = user.id
             await bot.kick_chat_member(message.chat.id, user_id)
-            await message.reply(f"L'utente con ID {user_id} è stato espulso permanentemente da {message.from_user.first_name}!")
+            await message.reply(f"🚫 L'utente con ID {user_id} è stato espulso permanentemente da {message.from_user.first_name}!")
         elif message.reply_to_message:
             user_id = message.reply_to_message.from_user.id
             await bot.kick_chat_member(message.chat.id, user_id)
-            await message.reply(f"{message.reply_to_message.from_user.first_name} è stato espulso permanentemente da {message.from_user.first_name}!")
+            await message.reply(f"🚫 {message.reply_to_message.from_user.first_name} è stato espulso permanentemente da {message.from_user.first_name}!")
         else:
             await message.reply("Per favore fornisci un username, un ID o rispondi all'utente che vuoi espellere.")
     else:
         await message.reply("Non sei autorizzato a usare questo comando.")
+
+@Bot.on_message(filters.text & filters.group)
+async def antispam(bot, message):
+    if len(message.text) > 400:
+        user_id = message.from_user.id
+        await bot.restrict_chat_member(
+            message.chat.id, 
+            user_id, 
+            ChatPermissions(can_send_messages=False), 
+            until_date=int(time.time() + 43200)  # 12 ore
+        )
+        await message.reply(f"🔇 {message.from_user.first_name} è stato silenziato per 12 ore per aver inviato un messaggio troppo lungo.")
+        await bot.send_message(message.chat.id, f"🔇 {message.from_user.first_name} è stato silenziato per 12 ore per spam.")
 
 if __name__ == "__main__":
     logging.info("Starting bot...")
