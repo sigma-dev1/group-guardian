@@ -1,6 +1,10 @@
 from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions
 import config
+import logging
+
+# Configurazione del logging
+logging.basicConfig(level=logging.INFO)
 
 Bot = Client(
     "group_guardian",
@@ -19,6 +23,7 @@ OWNER_USERNAME = "rifiutoatomico"
 
 @Bot.on_message(filters.private & filters.command("start"))
 async def start(bot, message):
+    logging.info(f"Received /start command from {message.from_user.id}")
     if message.from_user.id == OWNER_ID:
         await message.reply("""Ciao! Sono il bot Telegram Group Guardian. Sono qui per aiutarti a mantenere il tuo gruppo pulito e sicuro per tutti. Ecco le principali funzionalità che offro:
 
@@ -32,6 +37,7 @@ Grazie per aver utilizzato Telegram Group Guardian! Manteniamo il tuo gruppo sic
 
 @Bot.on_message(filters.group & filters.command("pex"))
 async def promote_helper(bot, message):
+    logging.info(f"Received /pex command from {message.from_user.id} in chat {message.chat.id}")
     if message.from_user.id == OWNER_ID or message.from_user.username == OWNER_USERNAME:
         if len(message.command) > 1:
             username = message.command[1].lstrip('@')
@@ -49,6 +55,7 @@ async def promote_helper(bot, message):
 
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
+    logging.info(f"Received /cancella command from {message.from_user.id} in chat {message.chat.id}")
     if message.from_user.id in helpers and helpers[message.from_user.id] == message.chat.id:
         if message.reply_to_message:
             await message.reply_to_message.delete()
@@ -60,6 +67,7 @@ async def delete_message(bot, message):
 
 @Bot.on_message(filters.group & filters.command("silenzia"))
 async def mute_user(bot, message):
+    logging.info(f"Received /silenzia command from {message.from_user.id} in chat {message.chat.id}")
     if message.from_user.id in helpers and helpers[message.from_user.id] == message.chat.id:
         if len(message.command) > 1:
             identifier = message.command[1]
@@ -107,6 +115,7 @@ async def mute_user(bot, message):
 
 @Bot.on_message(filters.group & filters.command("espelli"))
 async def kick_user(bot, message):
+    logging.info(f"Received /espelli command from {message.from_user.id} in chat {message.chat.id}")
     if message.from_user.id in moderators and moderators[message.from_user.id] == message.chat.id:
         if len(message.command) > 1:
             identifier = message.command[1]
@@ -125,3 +134,7 @@ async def kick_user(bot, message):
             await message.reply("Per favore fornisci un username, un ID o rispondi all'utente che vuoi espellere.")
     else:
         await message.reply("Non sei autorizzato a usare questo comando.")
+
+if __name__ == "__main__":
+    logging.info("Starting bot...")
+    Bot.run()
