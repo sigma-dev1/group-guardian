@@ -1,4 +1,4 @@
-   from pyrogram import Client, filters
+from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions
 import config
 
@@ -74,12 +74,12 @@ async def mute_user(bot, message):
                 permissions=ChatPermissions(
                     can_send_messages=False, 
                     can_send_media_messages=False, 
-                    can_send_polls=False, 
-                    can_send_other_messages=False, 
-                    can_add_web_page_previews=False, 
-                    can_change_info=False, 
-                    can_invite_users=False, 
-                    can_pin_messages=False
+                    can send polls=False, 
+                    can send other messages=False, 
+                    can add web page previews=False, 
+                    can change info=False, 
+                    can invite users=False, 
+                    can pin messages=False
                 )
             )
             await message.reply(f"L'utente con ID {user_id} è stato silenziato permanentemente da {message.from_user.first_name}!")
@@ -89,10 +89,10 @@ async def mute_user(bot, message):
                 message.chat.id, 
                 user_id, 
                 permissions=ChatPermissions(
-                    can_send_messages=False, 
-                    can_send_media_messages=False, 
-                    can_send_polls=False, 
-                    can_send_other_messages=False, 
+                    can send messages=False, 
+                    can send media messages=False, 
+                    can send polls=False, 
+                    can send other messages=False, 
                     can add web page previews=False, 
                     can change info=False, 
                     can invite users=False, 
@@ -110,7 +110,7 @@ async def kick_user(bot, message):
     if message.from_user.id in moderators and moderators[message.from_user.id] == message.chat.id:
         if len(message.command) > 1:
             identifier = message.command[1]
-            if identifier isdigit():
+            if identifier.isdigit():
                 user_id = int(identifier)
             else:
                 user = await bot.get_users(identifier)
