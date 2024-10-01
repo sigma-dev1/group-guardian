@@ -32,22 +32,22 @@ async def start(bot, message):
     else:
         await message.reply("Questo bot è privato e può essere utilizzato solo dal proprietario.")
 
-@Bot.on_message(filters.group & filters.command("pex"))
-async def promote_helper(bot, message):
-    if message.from_user.id == OWNER_ID or message.from_user.username == OWNER_USERNAME:
-        if len(message.command) > 1:
-            username = message.command[1].lstrip('@')
-            user = await bot.get_users(username)
-            if "mod" in message.command:
-                moderators[user.id] = message.chat.id
-                await message.reply(f"⭐ {user.first_name} è stato promosso a moderatore in questo gruppo!")
-            else:
-                helpers[user.id] = message.chat.id
-                await message.reply(f"⭐ {user.first_name} è stato promosso a helper in questo gruppo!")
-        else:
-            await message.reply("Per favore fornisci un username da promuovere.")
+@Bot.on_message(filters.group & filters.command("mod"))
+async def promote_mod(bot, message):
+    if message.reply_to_message:
+        user_id = message.reply_to_message.from_user.id
+        await bot.promote_chat_member(
+            message.chat.id, 
+            user_id, 
+            can_change_info=True,
+            can_delete_messages=True,
+            can_restrict_members=True,
+            can_pin_messages=True,
+            can_promote_members=True
+        )
+        await message.reply(f"⭐ {message.reply_to_message.from_user.first_name} è stato promosso a moderatore!")
     else:
-        await message.reply("Solo il proprietario del bot può promuovere helper o moderatori.")
+        await message.reply("Rispondi al messaggio dell'utente che vuoi promuovere.")
 
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
@@ -156,6 +156,11 @@ async def antispam(bot, message):
         )
         await message.reply(f"🔇 {message.from_user.first_name} è stato silenziato per 12 ore per spam.")
         await bot.send_message(chat_id, f"🔇 {message.from_user.first_name} è stato silenziato per 12 ore per spam.")
+        
+        # Elimina i messaggi di spam
+        for msg, timestamp in user_messages[user_id]:
+            if msg == text:
+                await bot.delete_messages(chat_id, message.message_id)
 
 if __name__ == "__main__":
     logging.info("Starting bot...")
