@@ -117,4 +117,8 @@ async def kick_user(bot, message):
         elif message.reply_to_message:
             user_id = message.reply_to_message.from_user.id
             await bot.kick_chat_member(message.chat.id, user_id)
-            await message.reply
+            await message.reply(f"{message.reply_to_message.from_user.first_name} è stato espulso permanentemente da {message.from_user.first_name}!")
+        else:
+            await message.reply("Per favore fornisci un username, un ID o rispondi all'utente che vuoi espellere.")
+    else:
+        await message.reply("Non sei autorizzato a usare questo comando.")
