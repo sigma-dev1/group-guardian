@@ -56,7 +56,7 @@ async def promote_helper(bot, message):
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
     logging.info(f"Received /cancella command from {message.from_user.id} in chat {message.chat.id}")
-    if message.from_user.id in helpers and helpers[message.from_user.id] == message.chat.id:
+    if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
         if message.reply_to_message:
             await message.reply_to_message.delete()
             await message.reply(f"Messaggio eliminato da {message.from_user.first_name}!")
@@ -68,7 +68,7 @@ async def delete_message(bot, message):
 @Bot.on_message(filters.group & filters.command("silenzia"))
 async def mute_user(bot, message):
     logging.info(f"Received /silenzia command from {message.from_user.id} in chat {message.chat.id}")
-    if message.from_user.id in helpers and helpers[message.from_user.id] == message.chat.id:
+    if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
         if len(message.command) > 1:
             identifier = message.command[1]
             if identifier.isdigit():
@@ -116,7 +116,7 @@ async def mute_user(bot, message):
 @Bot.on_message(filters.group & filters.command("espelli"))
 async def kick_user(bot, message):
     logging.info(f"Received /espelli command from {message.from_user.id} in chat {message.chat.id}")
-    if message.from_user.id in moderators and moderators[message.from_user.id] == message.chat.id:
+    if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
         if len(message.command) > 1:
             identifier = message.command[1]
             if identifier.isdigit():
