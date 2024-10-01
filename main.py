@@ -18,6 +18,9 @@ Bot = Client(
 helpers = {}
 moderators = {}
 
+# Dizionario per tenere traccia dei messaggi inviati dagli utenti
+user_messages = {}
+
 # Il tuo ID utente e username
 OWNER_ID = 6849853752
 OWNER_USERNAME = "rifiutoatomico"
@@ -127,16 +130,32 @@ async def kick_user(bot, message):
 
 @Bot.on_message(filters.text & filters.group)
 async def antispam(bot, message):
-    if len(message.text) > 400:
-        user_id = message.from_user.id
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+    text = message.text
+
+    # Inizializza il dizionario per l'utente se non esiste
+    if user_id not in user_messages:
+        user_messages[user_id] = []
+
+    # Aggiungi il messaggio corrente con il timestamp
+    user_messages[user_id].append((text, time.time()))
+
+    # Filtra i messaggi vecchi più di 10 minuti
+    user_messages[user_id] = [(msg, timestamp) for msg, timestamp in user_messages[user_id] if time.time() - timestamp < 600]
+
+    # Conta i messaggi identici inviati negli ultimi 10 minuti
+    identical_messages = [msg for msg, timestamp in user_messages[user_id] if msg == text]
+
+    if len(identical_messages) > 3 or len(text) > 400:
         await bot.restrict_chat_member(
-            message.chat.id, 
+            chat_id, 
             user_id, 
             ChatPermissions(can_send_messages=False), 
             until_date=int(time.time() + 43200)  # 12 ore
         )
-        await message.reply(f"🔇 {message.from_user.first_name} è stato silenziato per 12 ore per aver inviato un messaggio troppo lungo.")
-        await bot.send_message(message.chat.id, f"🔇 {message.from_user.first_name} è stato silenziato per 12 ore per spam.")
+        await message.reply(f"🔇 {message.from_user.first_name} è stato silenziato per 12 ore per spam.")
+        await bot.send_message(chat_id, f"🔇 {message.from_user.first_name} è stato silenziato per 12 ore per spam.")
 
 if __name__ == "__main__":
     logging.info("Starting bot...")
