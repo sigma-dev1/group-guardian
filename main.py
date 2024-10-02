@@ -201,6 +201,12 @@ async def handle_new_members(bot, message):
 # Dizionario per tenere traccia del numero di messaggi inviati dagli utenti
 user_message_count = {}
 
+# Inizializza il bot
+Bot = Client("my_bot")
+
+# Dizionario per contare i messaggi degli utenti
+user_message_count = {}
+
 @Bot.on_message(filters.group)
 async def check_message_count(bot, message):
     user_id = message.from_user.id
@@ -213,7 +219,7 @@ async def check_message_count(bot, message):
     # Incrementa il conteggio dei messaggi
     user_message_count[user_id] += 1
 
-@Bot.on_message(filters.group & filters.regex(r'https?://\S+'))
+@Bot.on_message(filters.group & filters.entity(MessageEntity.URL))
 async def mute_for_link(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
