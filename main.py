@@ -2,7 +2,9 @@ from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions
 import config
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
+import asyncio
+import re
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -196,6 +198,9 @@ async def handle_new_members(bot, message):
     except Exception as e:
         logging.error(f"Errore nel gestire i nuovi membri: {e}")
 
+# Dizionario per tenere traccia del numero di messaggi inviati dagli utenti
+user_message_count = {}
+
 @Bot.on_message(filters.group)
 async def check_message_count(bot, message):
     user_id = message.from_user.id
@@ -208,7 +213,7 @@ async def check_message_count(bot, message):
     # Incrementa il conteggio dei messaggi
     user_message_count[user_id] += 1
 
-@Bot.on_message(filters.group & filters.entity(MessageEntity.URL))
+@Bot.on_message(filters.group & filters.regex(r'https?://\S+'))
 async def mute_for_link(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -251,5 +256,5 @@ async def mute_for_link(bot, message):
         )
         await bot.send_message(chat_id, f"🔊 {message.from_user.first_name} è stato smutato e può inviare messaggi di nuovo.")
 
-
-Bot.run( )
+# Avvia il bot
+Bot.run()
