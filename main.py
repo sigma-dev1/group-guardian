@@ -34,20 +34,23 @@ async def start(bot, message):
 
 @Bot.on_message(filters.group & filters.command("mod"))
 async def promote_mod(bot, message):
-    if message.reply_to_message:
-        user_id = message.reply_to_message.from_user.id
-        await bot.promote_chat_member(
-            message.chat.id, 
-            user_id, 
-            can_change_info=True,
-            can_delete_messages=True,
-            can_restrict_members=True,
-            can_pin_messages=True,
-            can_promote_members=True
-        )
-        await message.reply(f"⭐ {message.reply_to_message.from_user.first_name} è stato promosso a moderatore!")
+    if message.from_user.id == OWNER_ID:
+        if message.reply_to_message:
+            user_id = message.reply_to_message.from_user.id
+            await bot.promote_chat_member(
+                message.chat.id, 
+                user_id, 
+                can_change_info=True,
+                can_delete_messages=True,
+                can_restrict_members=True,
+                can_pin_messages=True,
+                can_promote_members=True
+            )
+            await message.reply(f"⭐ {message.reply_to_message.from_user.first_name} è stato promosso a moderatore!")
+        else:
+            await message.reply("Rispondi al messaggio dell'utente che vuoi promuovere.")
     else:
-        await message.reply("Rispondi al messaggio dell'utente che vuoi promuovere.")
+        await message.reply("Non sei autorizzato a usare questo comando.")
 
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
