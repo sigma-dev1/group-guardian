@@ -1,5 +1,4 @@
 from pyrogram import Client, filters
-from pyrogram.types import ChatPermissions
 import config
 import logging
 from datetime import datetime
@@ -14,17 +13,11 @@ Bot = Client(
     api_hash=config.API_HASH
 )
 
-# Dizionari per memorizzare lo stato di helper e moderatori
-helpers = {}
-moderators = {}
-
 # Variabili per tenere traccia dello stato del gruppo
 group_closed = False
-night_watch_active = False
 
 # Il tuo ID utente e username
 OWNER_ID = 6849853752
-OWNER_USERNAME = "rifiutoatomico"
 
 @Bot.on_message(filters.private & filters.command("start"))
 async def start(bot, message):
@@ -164,24 +157,9 @@ async def open_group(bot, message):
     else:
         await message.reply("Non sei autorizzato a usare questo comando.")
 
-@Bot.on_message(filters.group & filters.command("AntiRaid"))
-async def activate_night_watch(bot, message):
-    global night_watch_active
-    if message.from_user.id == OWNER_ID:
-        night_watch_active = not night_watch_active
-        status = "attivata" if night_watch_active else "disattivata"
-        await message.reply(f"🌙 Sorveglianza notturna {status}.")
-    else:
-        await message.reply("Non sei autorizzato a usare questo comando.")
-
 @Bot.on_message(filters.new_chat_members)
 async def handle_new_members(bot, message):
-    global group_closed, night_watch_active
-    current_hour = datetime.now().hour
-
-    # Controllo chiusura manuale o notturna
-    if group_closed or (night_watch_active and (current_hour >= 23 or current_hour < 7)):
+    global group_closed
+    if group_closed:
         for new_member in message.new_chat_members:
-            await bot.kick_chat_member(message.chat.id, new_member.id)
-
-Bot.run()
+            await bot.ban_chat_member(message.chat.id, new_member.id)
