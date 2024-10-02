@@ -42,15 +42,7 @@ async def promote_mod(bot, message):
             else:
                 user = await bot.get_users(identifier)
                 user_id = user.id
-            await bot.promote_chat_member(
-                message.chat.id, 
-                user_id, 
-                can_change_info=True,
-                can_delete_messages=True,
-                can_restrict_members=True,
-                can_pin_messages=True,
-                can_promote_members=True
-            )
+            moderators[user_id] = True
             await message.reply(f"⭐ {user.first_name} è stato promosso a moderatore!")
         else:
             await message.reply("Per favore fornisci un username o un ID dell'utente che vuoi promuovere.")
@@ -59,7 +51,7 @@ async def promote_mod(bot, message):
 
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
-    if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
+    if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
         if message.reply_to_message:
             await message.reply_to_message.delete()
             await message.reply(f"Messaggio eliminato da {message.from_user.first_name}!")
@@ -70,7 +62,7 @@ async def delete_message(bot, message):
 
 @Bot.on_message(filters.group & filters.command("silenzia"))
 async def mute_user(bot, message):
-    if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
+    if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
         if len(message.command) > 1:
             identifier = message.command[1]
             if identifier.isdigit():
@@ -169,7 +161,3 @@ async def antispam(bot, message):
         for msg, timestamp in user_messages[user_id]:
             if msg == text:
                 await bot.delete_messages(chat_id, message.message_id)
-
-if __name__ == "__main__":
-    logging.info("Starting bot...")
-    Bot.run()
