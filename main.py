@@ -36,9 +36,12 @@ async def start(bot, message):
 async def promote_mod(bot, message):
     if message.from_user.id == OWNER_ID:
         if len(message.command) > 1:
-            username = message.command[1]
-            user = await bot.get_users(username)
-            user_id = user.id
+            identifier = message.command[1]
+            if identifier.isdigit():
+                user_id = int(identifier)
+            else:
+                user = await bot.get_users(identifier)
+                user_id = user.id
             await bot.promote_chat_member(
                 message.chat.id, 
                 user_id, 
@@ -50,7 +53,7 @@ async def promote_mod(bot, message):
             )
             await message.reply(f"⭐ {user.first_name} è stato promosso a moderatore!")
         else:
-            await message.reply("Per favore fornisci un username dell'utente che vuoi promuovere.")
+            await message.reply("Per favore fornisci un username o un ID dell'utente che vuoi promuovere.")
     else:
         await message.reply("Non sei autorizzato a usare questo comando.")
 
@@ -83,7 +86,7 @@ async def mute_user(bot, message):
                     can_send_media_messages=False, 
                     can_send_polls=False, 
                     can_send_other_messages=False, 
-                    can_add_web_page_previews=False, 
+                    can add_web_page_previews=False, 
                     can_change_info=False, 
                     can_invite_users=False, 
                     can_pin_messages=False
@@ -100,7 +103,7 @@ async def mute_user(bot, message):
                     can_send_media_messages=False, 
                     can_send_polls=False, 
                     can_send_other_messages=False, 
-                    can_add_web_page_previews=False, 
+                    can add_web_page_previews=False, 
                     can_change_info=False, 
                     can_invite_users=False, 
                     can_pin_messages=False
