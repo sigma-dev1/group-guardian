@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions
 import config
 import logging
+from datetime import datetime
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -13,12 +14,13 @@ Bot = Client(
     api_hash=config.API_HASH
 )
 
-# Dizionario per memorizzare lo stato di helper e moderatori
+# Dizionari per memorizzare lo stato di helper e moderatori
 helpers = {}
 moderators = {}
 
-# Dizionario per tenere traccia dei messaggi inviati dagli utenti
-user_messages = {}
+# Variabili per tenere traccia dello stato del gruppo
+group_closed = False
+night_watch_active = False
 
 # Il tuo ID utente e username
 OWNER_ID = 6849853752
@@ -143,5 +145,43 @@ async def block_user(bot, message):
             await message.reply("Per favore fornisci un username, un ID o rispondi all'utente che vuoi bloccare.")
     else:
         await message.reply("Non sei autorizzato a usare questo comando.")
+
+@Bot.on_message(filters.group & filters.command("closed"))
+async def close_group(bot, message):
+    global group_closed
+    if message.from_user.id == OWNER_ID:
+        group_closed = True
+        await message.reply("🔒 Il gruppo è stato chiuso manualmente. Nessun nuovo utente può unirsi.")
+    else:
+        await message.reply("Non sei autorizzato a usare questo comando.")
+
+@Bot.on_message(filters.group & filters.command("open"))
+async def open_group(bot, message):
+    global group_closed
+    if message.from_user.id == OWNER_ID:
+        group_closed = False
+        await message.reply("🔓 Il gruppo è stato aperto manualmente. I nuovi utenti possono unirsi.")
+    else:
+        await message.reply("Non sei autorizzato a usare questo comando.")
+
+@Bot.on_message(filters.group & filters.command("AntiRaid"))
+async def activate_night_watch(bot, message):
+    global night_watch_active
+    if message.from_user.id == OWNER_ID:
+        night_watch_active = not night_watch_active
+        status = "attivata" if night_watch_active else "disattivata"
+        await message.reply(f"🌙 Sorveglianza notturna {status}.")
+    else:
+        await message.reply("Non sei autorizzato a usare questo comando.")
+
+@Bot.on_message(filters.new_chat_members)
+async def handle_new_members(bot, message):
+    global group_closed, night_watch_active
+    current_hour = datetime.now().hour
+
+    # Controllo chiusura manuale o notturna
+    if group_closed or (night_watch_active and (current_hour >= 23 or current_hour < 7)):
+        for new_member in message.new_chat_members:
+            await bot.kick_chat_member(message.chat.id, new_member.id)
 
 Bot.run()
