@@ -49,9 +49,26 @@ async def promote_mod(bot, message):
     else:
         await message.reply("Non sei autorizzato a usare questo comando.")
 
+@Bot.on_message(filters.group & filters.command("pex"))
+async def promote_helper(bot, message):
+    if message.from_user.id == OWNER_ID:
+        if len(message.command) > 1:
+            identifier = message.command[1]
+            if identifier.isdigit():
+                user_id = int(identifier)
+            else:
+                user = await bot.get_users(identifier)
+                user_id = user.id
+            helpers[user_id] = True
+            await message.reply(f"⭐ {user.first_name} è stato promosso a helper!")
+        else:
+            await message.reply("Per favore fornisci un username o un ID dell'utente che vuoi promuovere.")
+    else:
+        await message.reply("Non sei autorizzato a usare questo comando.")
+
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
-    if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
+    if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
         if message.reply_to_message:
             await message.reply_to_message.delete()
             await message.reply(f"Messaggio eliminato da {message.from_user.first_name}!")
@@ -62,7 +79,7 @@ async def delete_message(bot, message):
 
 @Bot.on_message(filters.group & filters.command("silenzia"))
 async def mute_user(bot, message):
-    if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
+    if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
         if len(message.command) > 1:
             identifier = message.command[1]
             if identifier.isdigit():
@@ -109,7 +126,7 @@ async def mute_user(bot, message):
 
 @Bot.on_message(filters.group & filters.command("espelli"))
 async def kick_user(bot, message):
-    if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
+    if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
         if len(message.command) > 1:
             identifier = message.command[1]
             if identifier.isdigit():
