@@ -100,7 +100,8 @@ async def mute_user(bot, message):
                     can_invite_users=False, 
                     can_pin_messages=False
                 )
-            ) message.reply(f"🔇 {message.reply_to_message.from_user.first_name} è stato silenziato permanentemente da {message.from_user.first_name}!")
+            )
+            await message.reply(f"🔇 {message.reply_to_message.from_user.first_name} è stato silenziato permanentemente da {message.from_user.first_name}!")
         else:
             await message.reply("Per favore fornisci un username, un ID o rispondi all'utente che vuoi silenziare.")
     else:
@@ -161,5 +162,5 @@ async def antispam(bot, message):
             if msg == text:
                 await bot.delete_messages(chat_id, message.message_id)
 
-if name == "__main__":
+if __name__ == "__main__":
     Bot.run()
