@@ -86,7 +86,7 @@ async def mute_user(bot, message):
                     can_send_media_messages=False, 
                     can_send_polls=False, 
                     can_send_other_messages=False, 
-                    can add_web_page_previews=False, 
+                    can_add_web_page_previews=False, 
                     can_change_info=False, 
                     can_invite_users=False, 
                     can_pin_messages=False
@@ -103,7 +103,7 @@ async def mute_user(bot, message):
                     can_send_media_messages=False, 
                     can_send_polls=False, 
                     can_send_other_messages=False, 
-                    can add_web_page_previews=False, 
+                    can_add_web_page_previews=False, 
                     can_change_info=False, 
                     can_invite_users=False, 
                     can_pin_messages=False
