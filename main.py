@@ -126,7 +126,7 @@ async def mute_user(bot, message):
 
 @Bot.on_message(filters.group & filters.command("block"))
 async def block_user(bot, message):
-    if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
+    if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
         if len(message.command) > 1:
             identifier = message.command[1]
             if identifier.isdigit():
