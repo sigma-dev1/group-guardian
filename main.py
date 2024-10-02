@@ -1,6 +1,5 @@
 from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions
-import time
 import config
 import logging
 
@@ -134,11 +133,11 @@ async def block_user(bot, message):
             else:
                 user = await bot.get_users(identifier)
                 user_id = user.id
-            await bot.kick_chat_member(message.chat.id, user_id)
+            await bot.ban_chat_member(message.chat.id, user_id)
             await message.reply(f"🚫 L'utente con ID {user_id} è stato bloccato permanentemente da {message.from_user.first_name}!")
         elif message.reply_to_message:
             user_id = message.reply_to_message.from_user.id
-            await bot.kick_chat_member(message.chat.id, user_id)
+            await bot.ban_chat_member(message.chat.id, user_id)
             await message.reply(f"🚫 {message.reply_to_message.from_user.first_name} è stato bloccato permanentemente da {message.from_user.first_name}!")
         else:
             await message.reply("Per favore fornisci un username, un ID o rispondi all'utente che vuoi bloccare.")
