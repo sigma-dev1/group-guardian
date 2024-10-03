@@ -214,7 +214,9 @@ async def check_message_count(bot, message):
     # Incrementa il conteggio dei messaggi
     user_message_count[user_id] += 1
 
-@Bot.on_message(filters.group & filters.entity(MessageEntity.URL))
+from pyrogram.enums import MessageEntityType
+
+@Bot.on_message(filters.group & filters.entity(MessageEntityType.URL))
 async def mute_for_link(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
