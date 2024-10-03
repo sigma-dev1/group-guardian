@@ -203,7 +203,7 @@ async def handle_new_members(bot, message):
     except Exception as e:
         logging.error(f"Errore nel gestire i nuovi membri: {e}")
 
-@Bot.on_message(filters.group)
+@bot.on_message(filters.group)
 async def check_message_count(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -215,7 +215,7 @@ async def check_message_count(bot, message):
     # Incrementa il conteggio dei messaggi
     user_message_count[user_id] += 1
 
-@Bot.on_message(filters.group)
+@bot.on_message(filters.group)
 async def mute_for_link(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
