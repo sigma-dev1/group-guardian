@@ -1,6 +1,5 @@
 from pyrogram import Client, filters
-from pyrogram.types import ChatPermissions, MessageEntity
-from pyrogram.enums import MessageEntityType
+from pyrogram.types import ChatPermissions
 import config
 import logging
 from datetime import datetime, timedelta
@@ -20,6 +19,8 @@ Bot = Client(
 helpers = {}
 moderators = {}
 user_message_count = {}
+new_user_count = {}
+ban_active = {}
 
 # Variabili per tenere traccia dello stato del gruppo
 group_closed = False
@@ -131,10 +132,10 @@ async def mute_user(bot, message):
                         can_send_media_messages=False, 
                         can_send_polls=False, 
                         can_send_other_messages=False, 
-                        can_add_web_page_previews=False, 
-                        can_change_info=False, 
-                        can_invite_users=False, 
-                        can_pin_messages=False
+                        can add web page previews=False, 
+                        can change info=False, 
+                        can invite users=False, 
+                        can pin messages=False
                     )
                 )
                 await message.reply(f"🔇 {message.reply_to_message.from_user.first_name} è stato silenziato permanentemente da {message.from_user.first_name}!")
@@ -175,7 +176,7 @@ async def close_group(bot, message):
         global group_closed
         if message.from_user.id == OWNER_ID:
             group_closed = True
-            await message.reply("🔒 Il gruppo è stato chiuso. I nuovi utenti non possono unirsi.")
+            await message.reply("🔒 Il gruppo è stato chiuso manualmente. I nuovi utenti non possono unirsi.")
         else:
             await message.reply("Non sei autorizzato a usare questo comando.")
     except Exception as e:
@@ -193,69 +194,29 @@ async def open_group(bot, message):
     except Exception as e:
         logging.error(f"Errore nel comando open: {e}")
 
-# Dizionario per tenere traccia del conteggio dei messaggi degli utenti
-user_message_count = {}
+@Bot.on_message(filters.group & filters.new_chat_members)
+async def handle_new_members(bot, message):
+    try:
+        chat_id = message.chat.id
+        if chat_id not in new_user_count:
+            new_user_count[chat_id] = 0
+        new_user_count[chat_id] += 1
 
-@Bot.on_message(filters.group)
-async def check_message_count(bot, message):
-    user_id = message.from_user.id
-    chat_id = message.chat.id
+        if new_user_count[chat_id] > 15:
+            if chat_id not in ban_active or not ban_active[chat_id]:
+                ban_active[chat_id] = True
+                await message.reply("🚫 Troppi utenti si sono uniti di fila. I nuovi utenti verranno bannati per 1 minuto.")
+                
+                # Bannare i nuovi utenti che si uniscono
+                for new_member in message.new_chat_members:
+                    await bot.ban_chat_member(chat_id, new_member.id)
+                
+                # Disattivare il ban automatico dopo 1 minuto
+                await asyncio.sleep(60)
+                ban_active[chat_id] = False
+                new_user_count[chat_id] = 0
+                await message.reply("🔓 Il ban automatico è stato disattivato.")
+    except Exception as e:
+        logging.error(f"Errore nel gestire i nuovi membri: {e}")
 
-    # Inizializza il conteggio dei messaggi per l'utente se non esiste
-    if user_id not in user_message_count:
-        user_message_count[user_id] = 0
-
-    # Incrementa il conteggio dei messaggi
-    user_message_count[user_id] += 1
-
-@Bot.on_message(filters.group)
-async def mute_for_link(bot, message):
-    user_id = message.from_user.id
-    chat_id = message.chat.id
-
-    # Assicurati che il messaggio contenga entità
-    if message.entities:
-        # Controlla se il messaggio contiene un link
-        if any(entity.type == MessageEntityType.URL for entity in message.entities):
-            # Controlla se l'utente ha inviato meno di 10 messaggi
-            if user_message_count.get(user_id, 0) < 10:
-                # Assicurati che il bot non muti se stesso
-                if user_id != bot.me.id:
-                    # Muta l'utente per un minuto
-                    await bot.restrict_chat_member(
-                        chat_id,
-                        user_id,
-                        permissions=ChatPermissions(
-                            can_send_messages=False,
-                            can_send_media_messages=False,
-                            can_send_polls=False,
-                            can_send_other_messages=False,
-                            can_add_web_page_previews=False,
-                            can_change_info=False,
-                            can_invite_users=False,
-                            can_pin_messages=False
-                        ),
-                        until_date=datetime.now() + timedelta(minutes=1)
-                    )
-                    await message.reply(f"🔇 {message.from_user.first_name} è stato silenziato per un minuto per aver inviato un link senza aver inviato almeno 10 messaggi.")
-
-                    # Attendi un minuto e poi smuta l'utente
-                    await asyncio.sleep(60)
-                    await bot.restrict_chat_member(
-                        chat_id,
-                        user_id,
-                        permissions=ChatPermissions(
-                            can_send_messages=True,
-                            can_send_media_messages=True,
-                            can_send_polls=True,
-                            can_send_other_messages=True,
-                            can_add_web_page_previews=True,
-                            can_change_info=False,
-                            can_invite_users=True,
-                            can_pin_messages=True
-                        )
-                    )
-                    await bot.send_message(chat_id, f"🔊 {message.from_user.first_name} è stato smutato e può inviare messaggi di nuovo.")
-
-# Avvia il bot
 Bot.run()
