@@ -220,44 +220,46 @@ async def mute_for_link(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    # Controlla se il messaggio contiene un link
-    if any(entity.type == MessageEntityType.URL for entity in message.entities):
-        # Controlla se l'utente ha inviato meno di 10 messaggi
-        if user_message_count.get(user_id, 0) < 10:
-            # Muta l'utente per un minuto
-            await bot.restrict_chat_member(
-                chat_id,
-                user_id,
-                permissions=ChatPermissions(
-                    can_send_messages=False,
-                    can_send_media_messages=False,
-                    can_send_polls=False,
-                    can_send_other_messages=False,
-                    can_add_web_page_previews=False,
-                    can_change_info=False,
-                    can_invite_users=False,
-                    can_pin_messages=False
-                ),
-                until_date=datetime.now() + timedelta(minutes=1)
-            )
-            await message.reply(f"🔇 {message.from_user.first_name} è stato silenziato per un minuto per aver inviato un link senza aver inviato almeno 10 messaggi.")
+    # Assicurati che il messaggio contenga entità
+    if message.entities:
+        # Controlla se il messaggio contiene un link
+        if any(entity.type == MessageEntityType.URL for entity in message.entities):
+            # Controlla se l'utente ha inviato meno di 10 messaggi
+            if user_message_count.get(user_id, 0) < 10:
+                # Assicurati che il bot non muti se stesso
+                if user_id != bot.me.id:
+                    # Muta l'utente per un minuto
+                    await bot.restrict_chat_member(
+                        chat_id,
+                        user_id,
+                        permissions=ChatPermissions(
+                            can_send_messages=False,
+                            can_send_media_messages=False,
+                            can_send_polls=False,
+                            can_send_other_messages=False,
+                            can_add_web_page_previews=False,
+                            can_change_info=False,
+                            can_invite_users=False,
+                            can_pin_messages=False
+                        ),
+                        until_date=datetime.now() + timedelta(minutes=1)
+                    )
+                    await message.reply(f"🔇 {message.from_user.first_name} è stato silenziato per un minuto per aver inviato un link senza aver inviato almeno 10 messaggi.")
 
-            # Attendi un minuto e poi smuta l'utente
-            await asyncio.sleep(60)
-            await bot.restrict_chat_member(
-                chat_id,
-                user_id,
-                permissions=ChatPermissions(
-                    can_send_messages=True,
-                    can_send_media_messages=True,
-                    can_send_polls=True,
-                    can_send_other_messages=True,
-                    can_add_web_page_previews=True,
-                    can_change_info=False,
-                    can_invite_users=True,
-                    can_pin_messages=True
-                )
-            )
-            await bot.send_message(chat_id, f"🔊 {message.from_user.first_name} è stato smutato e può inviare messaggi di nuovo.")
-
-Bot.run()
+                    # Attendi un minuto e poi smuta l'utente
+                    await asyncio.sleep(60)
+                    await bot.restrict_chat_member(
+                        chat_id,
+                        user_id,
+                        permissions=ChatPermissions(
+                            can_send_messages=True,
+                            can_send_media_messages=True,
+                            can_send_polls=True,
+                            can_send_other_messages=True,
+                            can_add_web_page_previews=True,
+                            can_change_info=False,
+                            can_invite_users=True,
+                            can_pin_messages=True
+                        )
+                    )
+                    await bot.send_message(chat_id, f"🔊 {message.from_user.first_name} è stato smutato e può inviare messaggi di nuovo.")
