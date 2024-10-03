@@ -200,19 +200,22 @@ async def handle_new_members(bot, message):
         chat_id = message.chat.id
         if chat_id not in new_user_count:
             new_user_count[chat_id] = 0
-        new_user_count[chat_id] += 1
+        new_user_count[chat_id] += len(message.new_chat_members)
+
+        logging.info(f"Nuovi membri aggiunti. Conteggio attuale: {new_user_count[chat_id]}")
 
         if new_user_count[chat_id] > 15:
             if chat_id not in ban_active or not ban_active[chat_id]:
                 ban_active[chat_id] = True
-                await message.reply("🚫 Troppi utenti si sono uniti di fila. I nuovi utenti verranno bannati per 1 minuto.")
+                await message.reply("🚫 Troppi utenti si sono uniti di fila. I nuovi utenti verranno bannati per 5 minuti.")
                 
                 # Bannare i nuovi utenti che si uniscono
                 for new_member in message.new_chat_members:
                     await bot.ban_chat_member(chat_id, new_member.id)
+                    logging.info(f"Utente {new_member.id} bannato.")
                 
-                # Disattivare il ban automatico dopo 1 minuto
-                await asyncio.sleep(60)
+                # Disattivare il ban automatico dopo 5 minuti
+                await asyncio.sleep(300)
                 ban_active[chat_id] = False
                 new_user_count[chat_id] = 0
                 await message.reply("🔓 Il ban automatico è stato disattivato.")
