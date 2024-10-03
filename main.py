@@ -203,7 +203,7 @@ async def handle_new_members(bot, message):
     except Exception as e:
         logging.error(f"Errore nel gestire i nuovi membri: {e}")
 
-@Bot.on_message(filters.group)
+@Bot.on_message(filters.group & filters.entities(MessageEntityType.URL))
 async def check_message_count(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -217,7 +217,7 @@ async def check_message_count(bot, message):
 
 from pyrogram.enums import MessageEntityType
 
-@Bot.on_message(filters.group & filters.entity(MessageEntityType.URL))
+@Bot.on_message(filters.group & filters.entities(MessageEntityType.URL))
 async def mute_for_link(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
