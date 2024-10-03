@@ -202,6 +202,7 @@ async def handle_new_members(bot, message):
                 await bot.ban_chat_member(message.chat.id, new_member.id)
     except Exception as e:
         logging.error(f"Errore nel gestire i nuovi membri: {e}")
+
 @Bot.on_message(filters.group)
 async def check_message_count(bot, message):
     user_id = message.from_user.id
