@@ -193,17 +193,10 @@ async def open_group(bot, message):
     except Exception as e:
         logging.error(f"Errore nel comando open: {e}")
 
-@Bot.on_message(filters.new_chat_members)
-async def handle_new_members(bot, message):
-    try:
-        global group_closed
-        if group_closed:
-            for new_member in message.new_chat_members:
-                await bot.ban_chat_member(message.chat.id, new_member.id)
-    except Exception as e:
-        logging.error(f"Errore nel gestire i nuovi membri: {e}")
+# Dizionario per tenere traccia del conteggio dei messaggi degli utenti
+user_message_count = {}
 
-@bot.on_message(filters.group)
+@Bot.on_message(filters.group)
 async def check_message_count(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -215,7 +208,7 @@ async def check_message_count(bot, message):
     # Incrementa il conteggio dei messaggi
     user_message_count[user_id] += 1
 
-@bot.on_message(filters.group)
+@Bot.on_message(filters.group)
 async def mute_for_link(bot, message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -263,3 +256,6 @@ async def mute_for_link(bot, message):
                         )
                     )
                     await bot.send_message(chat_id, f"🔊 {message.from_user.first_name} è stato smutato e può inviare messaggi di nuovo.")
+
+# Avvia il bot
+Bot.run()
