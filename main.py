@@ -1,5 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions, MessageEntity
+from pyrogram.enums import MessageEntityType
 import config
 import logging
 from datetime import datetime, timedelta
