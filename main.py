@@ -63,7 +63,7 @@ async def promote_mod(bot, message):
 @Bot.on_message(filters.group & filters.command("pex"))
 async def promote_helper(bot, message):
     try:
-        if message.from_user.id == OWNER_ID:
+        if message.from_user.id in moderators.get(message.chat.id, {}):
             if len(message.command) > 1:
                 identifier = message.command[1]
                 if identifier.isdigit():
@@ -207,20 +207,19 @@ async def handle_new_members(bot, message):
         if new_user_count[chat_id] > 15:
             if chat_id not in ban_active or not ban_active[chat_id]:
                 ban_active[chat_id] = True
-                await message.reply("🚫 Troppi utenti si sono uniti di fila. I nuovi utenti verranno bannati per 5 minuti.")
-                
+                await message.reply("🚫 Troppi utenti si sono uniti di fila. I nuovi utenti verranno bannati.")
+
                 # Bannare i nuovi utenti che si uniscono
                 for new_member in message.new_chat_members:
                     await bot.ban_chat_member(chat_id, new_member.id)
-                    logging.info(f"Utente {new_member.id} bannato.")
+            logging.info(f"{len(message.new_chat_members)} utenti sono stati bannati e classificati come bot.")
                 
                 # Disattivare il ban automatico dopo 5 minuti
                 await asyncio.sleep(300)
                 ban_active[chat_id] = False
                 new_user_count[chat_id] = 0
-                await message.reply("🔓 Il ban automatico è stato disattivato.")
+                await message.reply("🔓 Il gruppo è stato sbloccato. I nuovi utenti possono unirsi di nuovo.")
     except Exception as e:
-        logging.error(f"Errore nel gestire i nuovi membri: {e}")
+        logging.error(f"Errore nella gestione dei nuovi membri: {e}")
 
-# Avvio del bot
 Bot.run()
