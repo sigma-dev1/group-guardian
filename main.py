@@ -222,4 +222,5 @@ async def handle_new_members(bot, message):
     except Exception as e:
         logging.error(f"Errore nel gestire i nuovi membri: {e}")
 
+# Avvio del bot
 Bot.run()
