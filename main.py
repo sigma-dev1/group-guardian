@@ -212,7 +212,7 @@ async def handle_new_members(bot, message):
                 # Bannare i nuovi utenti che si uniscono
                 for new_member in message.new_chat_members:
                     await bot.ban_chat_member(chat_id, new_member.id)
-            logging.info(f"{len(message.new_chat_members)} utenti sono stati bannati e classificati come bot.")
+                logging.info(f"{len(message.new_chat_members)} utenti sono stati bannati e classificati come bot.")
                 
                 # Disattivare il ban automatico dopo 5 minuti
                 await asyncio.sleep(300)
