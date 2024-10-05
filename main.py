@@ -15,11 +15,12 @@ Bot = Client(
     api_hash=config.API_HASH
 )
 
-# Dizionari per memorizzare lo stato di helper e moderatori per ogni gruppo
+# Dizionari per memorizzare lo stato di helper e moderatori
 helpers = {}
 moderators = {}
-new_user_count = {}
-ban_active = {}
+
+# Variabili per tenere traccia dello stato del gruppo
+group_closed = False
 
 # Il tuo ID utente e username
 OWNER_ID = 6849853752
@@ -45,9 +46,7 @@ async def promote_mod(bot, message):
                 else:
                     user = await bot.get_users(identifier)
                     user_id = user.id
-                if message.chat.id not in moderators:
-                    moderators[message.chat.id] = {}
-                moderators[message.chat.id][user_id] = True
+                moderators[user_id] = True
                 await message.reply(f"⭐ {user.first_name} è stato promosso a moderatore!")
             else:
                 await message.reply("Per favore fornisci un username o un ID dell'utente che vuoi promuovere.")
@@ -59,7 +58,7 @@ async def promote_mod(bot, message):
 @Bot.on_message(filters.group & filters.command("pex"))
 async def promote_helper(bot, message):
     try:
-        if message.from_user.id in moderators.get(message.chat.id, {}):
+        if message.from_user.id == OWNER_ID:
             if len(message.command) > 1:
                 identifier = message.command[1]
                 if identifier.isdigit():
@@ -67,9 +66,7 @@ async def promote_helper(bot, message):
                 else:
                     user = await bot.get_users(identifier)
                     user_id = user.id
-                if message.chat.id not in helpers:
-                    helpers[message.chat.id] = {}
-                helpers[message.chat.id][user_id] = True
+                helpers[user_id] = True
                 await message.reply(f"⭐ {user.first_name} è stato promosso a helper!")
             else:
                 await message.reply("Per favore fornisci un username o un ID dell'utente che vuoi promuovere.")
@@ -81,7 +78,7 @@ async def promote_helper(bot, message):
 @Bot.on_message(filters.group & filters.command("cancella"))
 async def delete_message(bot, message):
     try:
-        if message.from_user.id == OWNER_ID or message.from_user.id in helpers.get(message.chat.id, {}) or message.from_user.id in moderators.get(message.chat.id, {}):
+        if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
             if message.reply_to_message:
                 await message.reply_to_message.delete()
                 await message.reply(f"Messaggio eliminato da {message.from_user.first_name}!")
@@ -95,7 +92,7 @@ async def delete_message(bot, message):
 @Bot.on_message(filters.group & filters.command("silenzia"))
 async def mute_user(bot, message):
     try:
-        if message.from_user.id == OWNER_ID or message.from_user.id in helpers.get(message.chat.id, {}) or message.from_user.id in moderators.get(message.chat.id, {}):
+        if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
             if len(message.command) > 1:
                 identifier = message.command[1]
                 if identifier.isdigit():
@@ -145,7 +142,7 @@ async def mute_user(bot, message):
 @Bot.on_message(filters.group & filters.command("block"))
 async def block_user(bot, message):
     try:
-        if message.from_user.id == OWNER_ID or message.from_user.id in moderators.get(message.chat.id, {}):
+        if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
             if len(message.command) > 1:
                 identifier = message.command[1]
                 if identifier.isdigit():
@@ -166,32 +163,69 @@ async def block_user(bot, message):
     except Exception as e:
         logging.error(f"Errore nel comando block: {e}")
 
-@Bot.on_message(filters.group & filters.new_chat_members)
+@Bot.on_message(filters.group & filters.command("closed"))
+async def close_group(bot, message):
+    try:
+        global group_closed
+        if message.from_user.id == OWNER_ID:
+            group_closed = True
+            await message.reply("🔒 Il gruppo è stato chiuso manualmente. Nessun nuovo utente può unirsi.")
+        else:
+            await message.reply("Non sei autorizzato a usare questo comando.")
+    except Exception as e:
+        logging.error(f"Errore nel comando closed: {e}")
+
+@Bot.on_message(filters.group & filters.command("open"))
+async def open_group(bot, message):
+    try:
+        global group_closed
+        if message.from_user.id == OWNER_ID:
+            group_closed = False
+            await message.reply("🔓 Il gruppo è stato riaperto. Nuovi utenti possono unirsi.")
+        else:
+            await message.reply("Non sei autorizzato a usare questo comando.")
+    except Exception as e:
+        logging.error(f"Errore nel comando open: {e}")
+
+@Bot.on_message(filters.group)
+async def handle_messages(bot, message):
+    try:
+        global group_closed
+        if group_closed:
+            if not message.text:
+                await message.delete()
+            else:
+                await asyncio.sleep(5)
+                await message.delete()
+                await bot.restrict_chat_member(
+                    message.chat.id, 
+                    message.from_user.id, 
+                    permissions=ChatPermissions(
+                        can_send_messages=False, 
+                        can_send_media_messages=False, 
+                        can_send_polls=False, 
+                        can_send_other_messages=False, 
+                        can_add_web_page_previews=False, 
+                        can_change_info=False, 
+                        can_invite_users=False, 
+                        can_pin_messages=False
+                    ),
+                    until_date=datetime.now() + timedelta(hours=1)
+                )
+                await message.reply(f"🔇 {message.from_user.first_name} è stato silenziato per un'ora per aver inviato messaggi non consentiti.")
+    except Exception as e:
+        logging.error(f"Errore nel gestire i messaggi: {e}")
+
+@Bot.on_message(filters.new_chat_members)
 async def handle_new_members(bot, message):
     try:
-        chat_id = message.chat.id
-        if chat_id not in new_user_count:
-            new_user_count[chat_id] = 0
-        new_user_count[chat_id] += len(message.new_chat_members)
-
-        logging.info(f"Nuovi membri aggiunti. Conteggio attuale: {new_user_count[chat_id]}")
-
-        if new_user_count[chat_id] > 5:
-            if chat_id not in ban_active or not ban_active[chat_id]:
-                ban_active[chat_id] = True
-                await message.reply("🚫 Troppi utenti si sono uniti di fila. I nuovi utenti verranno bannati.")
-
-                # Bannare i nuovi utenti che si uniscono
-                for new_member in message.new_chat_members:
-                    await bot.ban_chat_member(chat_id, new_member.id)
-                logging.info(f"{len(message.new_chat_members)} utenti sono stati bannati e classificati come bot.")
-                
-                # Disattivare il ban automatico dopo 5 minuti
-                await asyncio.sleep(300)
-                ban_active[chat_id] = False
-                new_user_count[chat_id] = 0
-                await message.reply("🔓 Il gruppo è stato sbloccato. I nuovi utenti possono unirsi di nuovo.")
+        global group_closed
+        if group_closed:
+            for new_member in message.new_chat_members:
+                await bot.ban_chat_member(message.chat.id, new_member.id)
     except Exception as e:
-        logging.error(f"Errore nella gestione dei nuovi membri: {e}")
+        logging.error(f"Errore nel gestire i nuovi membri: {e}")
 
-Bot.run()
+if __name__ == '__main__':
+    Bot.run()
+
