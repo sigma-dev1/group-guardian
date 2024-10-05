@@ -109,12 +109,12 @@ async def mute_user(bot, message):
                     permissions=ChatPermissions(
                         can_send_messages=False, 
                         can_send_media_messages=False, 
-                        can send_polls=False, 
-                        can send_other_messages=False, 
-                        can add_web_page_previews=False, 
-                        can change_info=False, 
-                        can invite_users=False, 
-                        can pin_messages=False
+                        can_send_polls=False, 
+                        can_send_other_messages=False, 
+                        can_add_web_page_previews=False, 
+                        can_change_info=False, 
+                        can_invite_users=False, 
+                        can_pin_messages=False
                     )
                 )
                 await message.reply(f"🔇 L'utente con ID {user_id} è stato silenziato permanentemente da {message.from_user.first_name}!")
@@ -125,13 +125,13 @@ async def mute_user(bot, message):
                     user_id, 
                     permissions=ChatPermissions(
                         can_send_messages=False, 
-                        can send_media_messages=False, 
-                        can send_polls=False, 
-                        can send_other_messages=False, 
-                        can add_web_page_previews=False, 
-                        can change_info=False, 
-                        can invite_users=False, 
-                        can pin_messages=False
+                        can_send_media_messages=False, 
+                        can_send_polls=False, 
+                        can_send_other_messages=False, 
+                        can_add_web_page_previews=False, 
+                        can_change_info=False, 
+                        can_invite_users=False, 
+                        can_pin_messages=False
                     )
                 )
                 await message.reply(f"🔇 {message.reply_to_message.from_user.first_name} è stato silenziato permanentemente da {message.from_user.first_name}!")
