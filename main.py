@@ -18,12 +18,8 @@ Bot = Client(
 # Dizionari per memorizzare lo stato di helper e moderatori per ogni gruppo
 helpers = {}
 moderators = {}
-user_message_count = {}
 new_user_count = {}
 ban_active = {}
-
-# Variabili per tenere traccia dello stato del gruppo
-group_closed = False
 
 # Il tuo ID utente e username
 OWNER_ID = 6849853752
@@ -170,30 +166,6 @@ async def block_user(bot, message):
     except Exception as e:
         logging.error(f"Errore nel comando block: {e}")
 
-@Bot.on_message(filters.group & filters.command("closed"))
-async def close_group(bot, message):
-    try:
-        global group_closed
-        if message.from_user.id == OWNER_ID:
-            group_closed = True
-            await message.reply("🔒 Il gruppo è stato chiuso manualmente. I nuovi utenti non possono unirsi.")
-        else:
-            await message.reply("Non sei autorizzato a usare questo comando.")
-    except Exception as e:
-        logging.error(f"Errore nel comando closed: {e}")
-
-@Bot.on_message(filters.group & filters.command("open"))
-async def open_group(bot, message):
-    try:
-        global group_closed
-        if message.from_user.id == OWNER_ID:
-            group_closed = False
-            await message.reply("🔓 Il gruppo è stato aperto manualmente. I nuovi utenti possono unirsi.")
-        else:
-            await message.reply("Non sei autorizzato a usare questo comando.")
-    except Exception as e:
-        logging.error(f"Errore nel comando open: {e}")
-
 @Bot.on_message(filters.group & filters.new_chat_members)
 async def handle_new_members(bot, message):
     try:
@@ -204,7 +176,7 @@ async def handle_new_members(bot, message):
 
         logging.info(f"Nuovi membri aggiunti. Conteggio attuale: {new_user_count[chat_id]}")
 
-        if new_user_count[chat_id] > 15:
+        if new_user_count[chat_id] > 5:
             if chat_id not in ban_active or not ban_active[chat_id]:
                 ban_active[chat_id] = True
                 await message.reply("🚫 Troppi utenti si sono uniti di fila. I nuovi utenti verranno bannati.")
