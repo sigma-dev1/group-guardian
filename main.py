@@ -224,8 +224,8 @@ async def handle_new_members(bot, message):
             for new_member in message.new_chat_members:
                 await bot.ban_chat_member(message.chat.id, new_member.id)
     except Exception as e:
-        logging.error(f"Errore nel gestire i nuovi membri: {e}")
+        logging.error(f"Errore nel gestire i nuovi membri: {e}")                              
 
-if __name__ == '__main__':
-    Bot.run()
+Bot.run()
+    
 
