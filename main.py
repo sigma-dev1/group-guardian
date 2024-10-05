@@ -131,7 +131,7 @@ async def mute_user(bot, message):
                         can_add_web_page_previews=False, 
                         can_change_info=False, 
                         can_invite_users=False, 
-                        can_pin_messages=False
+                        can pin_messages=False
                     )
                 )
                 await message.reply(f"🔇 {message.reply_to_message.from_user.first_name} è stato silenziato permanentemente da {message.from_user.first_name}!")
@@ -195,3 +195,6 @@ async def handle_new_members(bot, message):
         logging.error(f"Errore nella gestione dei nuovi membri: {e}")
 
 Bot.run()
+
+
+
