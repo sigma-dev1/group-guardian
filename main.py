@@ -221,18 +221,19 @@ async def handle_messages(bot, message):
 async def handle_new_members(bot, message):
     try:
         global group_closed, new_members
-        new_members.extend([member.id for member in message.new_chat_members])
-        
-        if len(new_members) > 5:
-            for member_id in new_members:
-                await bot.ban_chat_member(message.chat.id, member_id)
-            await message.reply("🚫 Sono stati bannati tutti i nuovi membri per evitare uno storm.")
-            new_members.clear()
-        else:
+        if group_closed:
             for new_member in message.new_chat_members:
                 await bot.ban_chat_member(message.chat.id, new_member.id)
-                await message.reply(f"🚫 {new_member.first_name} è stato bannato.")
+                await message.reply(f"🚫 {new_member.first_name} è stato bannato perché il gruppo è chiuso.")
+        else:
+            new_members.extend([member.id for member in message.new_chat_members])
+            if len(new_members) > 5:
+                for member_id in new_members:
+                    await bot.ban_chat_member(message.chat.id, member_id)
+                await message.reply("🚫 Sono stati bannati tutti i nuovi membri per evitare uno storm.")
+                new_members.clear()
     except Exception as e:
         logging.error(f"Errore nel gestire i nuovi membri: {e}")
 
+# Avvia il bot
 Bot.run()
