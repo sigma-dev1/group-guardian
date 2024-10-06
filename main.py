@@ -221,12 +221,13 @@ async def handle_messages(bot, message):
 async def handle_new_members(bot, message):
     try:
         global group_closed
-        if group_closed:
-            for new_member in message.new_chat_members:
+        existing_members = [member.user.id for member in await bot.get_chat_members(message.chat.id)]
+        
+        for new_member in message.new_chat_members:
+            if group_closed and new_member.id not in existing_members:
                 await bot.ban_chat_member(message.chat.id, new_member.id)
                 await message.reply(f"🚫 {new_member.first_name} è stato bannato perché il gruppo è chiuso.")
-        else:
-            for new_member in message.new_chat_members:
+            else:
                 await message.reply(f"Benvenuto, {new_member.first_name}!")
     except Exception as e:
         logging.error(f"Errore nel gestire i nuovi membri: {e}")
