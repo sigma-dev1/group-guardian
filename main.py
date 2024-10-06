@@ -175,6 +175,18 @@ async def close_group(bot, message):
     except Exception as e:
         logging.error(f"Errore nel comando closed: {e}")
 
+@Bot.on_message(filters.group & filters.command("open"))
+async def open_group(bot, message):
+    try:
+        global group_closed
+        if message.from_user.id == OWNER_ID:
+            group_closed = False
+            await message.reply("🔓 Il gruppo è stato riaperto. Ora tutti possono unirsi.")
+        else:
+            await message.reply("Non sei autorizzato a usare questo comando.")
+    except Exception as e:
+        logging.error(f"Errore nel comando open: {e}")
+
 @Bot.on_message(filters.group)
 async def handle_messages(bot, message):
     try:
@@ -212,6 +224,6 @@ async def handle_new_members(bot, message):
             for new_member in message.new_chat_members:
                 await bot.ban_chat_member(message.chat.id, new_member.id)
     except Exception as e:
-        logging.error(f"Errore nel gestire i nuovi membri: {e}")                              
+        logging.error(f"Errore nel gestire i nuovi membri: {e}")
 
 Bot.run()
