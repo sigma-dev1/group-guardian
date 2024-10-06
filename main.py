@@ -206,10 +206,10 @@ async def handle_messages(bot, message):
                         can_send_media_messages=False, 
                         can_send_polls=False, 
                         can_send_other_messages=False, 
-                        can add_web_page_previews=False, 
-                        can change_info=False, 
-                        can invite_users=False, 
-                        can pin_messages=False
+                        can_add_web_page_previews=False, 
+                        can_change_info=False, 
+                        can_invite_users=False, 
+                        can_pin_messages=False
                     ),
                     until_date=datetime.now() + timedelta(hours=1)
                 )
@@ -231,7 +231,7 @@ async def handle_new_members(bot, message):
         else:
             for new_member in message.new_chat_members:
                 await bot.ban_chat_member(message.chat.id, new_member.id)
-                await message.reply(f"🚫 {new_member.first_name} è stato bannato.")
+                await message.reply(f"                await message.reply(f"🚫 {new_member.first_name} è stato bannato.")
     except Exception as e:
         logging.error(f"Errore nel gestire i nuovi membri: {e}")
 
