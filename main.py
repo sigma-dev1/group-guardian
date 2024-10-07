@@ -21,7 +21,6 @@ moderators = {}
 
 # Variabili per tenere traccia dello stato del gruppo
 group_closed = False
-new_members = []
 
 # Il tuo ID utente e username
 OWNER_ID = 6849853752
@@ -225,7 +224,6 @@ async def handle_new_members(bot, message):
             for new_member in message.new_chat_members:
                 await bot.ban_chat_member(message.chat.id, new_member.id)
                 await message.reply(f"🚫 {new_member.first_name} è stato bannato perché il gruppo è chiuso.")
-            await bot.delete_messages(message.chat.id, [msg.message_id for msg in await bot.get_chat_history(message.chat.id)])
         else:
             for new_member in message.new_chat_members:
                 await message.reply(f"Benvenuto, {new_member.first_name}!")
