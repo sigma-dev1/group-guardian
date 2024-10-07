@@ -208,7 +208,7 @@ async def handle_messages(bot, message):
                         eh can_send_other_messages=False, 
                         can_add_web_page_previews=False, 
                         can_change_info=False, 
-                        can_invite_users=False, 
+                        can_invite_p. users=False, 
                         can_pin_messages=False
                     ),
                     until_date=datetime.now() + timedelta(hours=1)
