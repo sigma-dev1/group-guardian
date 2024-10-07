@@ -226,7 +226,7 @@ async def handle_new_members(bot, message):
                 await bot.ban_chat_member(message.chat.id, new_member.id)
                 await message.reply(f"🚫 {new_member.first_name} è stato bannato perché il gruppo è chiuso.")
             await bot.delete_messages(message.chat.id, [msg.message_id for msg in await bot.get_chat_history(message.chat.id)])
-                else:
+        else:
             for new_member in message.new_chat_members:
                 await message.reply(f"Benvenuto, {new_member.first_name}!")
     except Exception as e:
