@@ -92,7 +92,7 @@ async def delete_message(bot, message):
 @Bot.on_message(filters.group & filters.command("silenzia"))
 async def mute_user(bot, message):
     try:
-        if message.from_user.id == OWNER_ID or message.from_user.id in helpers o message.from_user.id in moderators:
+        if message.from_user.id == OWNER_ID or message.from_user.id in helpers or message.from_user.id in moderators:
             if len(message.command) > 1:
                 identifier = message.command[1]
                 if identifier.isdigit():
@@ -106,8 +106,8 @@ async def mute_user(bot, message):
                     permissions=ChatPermissions(
                         can_send_messages=False, 
                         can_send_media_messages=False, 
-                        can send_polls=False, 
-                        can send_other_messages=False, 
+                        can_send_polls=False, 
+                        can_send_other_messages=False, 
                         can_add_web_page_previews=False, 
                         can_change_info=False, 
                         can_invite_users=False, 
@@ -142,7 +142,7 @@ async def mute_user(bot, message):
 @Bot.on_message(filters.group & filters.command("block"))
 async def block_user(bot, message):
     try:
-        if message.from_user.id == OWNER_ID o message.from_user.id in moderators:
+        if message.from_user.id == OWNER_ID or message.from_user.id in moderators:
             if len(message.command) > 1:
                 identifier = message.command[1]
                 if identifier.isdigit():
