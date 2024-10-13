@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 import config
 import logging
 from datetime import datetime
@@ -32,10 +32,12 @@ def welcome_and_mute(client, message):
 def verify_position(client, callback_query):
     user_id = int(callback_query.data.split('_')[1])
     if callback_query.from_user.id == user_id:
-        client.send_message(user_id, "Per favore, condividi la tua posizione cliccando il bottone qui sotto.")
-        button = InlineKeyboardButton("Condividi Posizione", request_location=True)
-        keyboard = InlineKeyboardMarkup([[button]])
-        client.send_message(user_id, "Condividi Posizione", reply_markup=keyboard)
+        keyboard = ReplyKeyboardMarkup(
+            [[KeyboardButton("Condividi Posizione", request_location=True)]],
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+        client.send_message(user_id, "Per favore, condividi la tua posizione usando il bottone qui sotto.", reply_markup=keyboard)
 
 # Funzione per gestire la condivisione della posizione
 @Bot.on_message(filters.location)
