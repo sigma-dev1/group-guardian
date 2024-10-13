@@ -27,16 +27,15 @@ def welcome_and_mute(client, message):
         keyboard = InlineKeyboardMarkup([[button]])
         message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, verifica il tuo IP cliccando il bottone qui sotto.", reply_markup=keyboard)
 
-# Funzione per gestire la verifica IP
+# Funzione per gestire la verifica IP in privato
 @Bot.on_callback_query(filters.regex(r"verify_(\d+)"))
 def verify_ip(client, callback_query):
     user_id = int(callback_query.data.split('_')[1])
     if callback_query.from_user.id == user_id:
-        # Chiedi di condividere l'IP (questo è un placeholder, dovresti integrare con la logica di raccolta IP)
-        callback_query.message.edit_text("Per favore, condividi il tuo IP usando il bottone sotto.")
+        client.send_message(user_id, "Per favore, condividi il tuo IP cliccando il bottone qui sotto.")
         button = InlineKeyboardButton("Condividi IP", callback_data=f"share_ip_{user_id}")
         keyboard = InlineKeyboardMarkup([[button]])
-        callback_query.message.reply_text("Condividi IP", reply_markup=keyboard)
+        client.send_message(user_id, "Condividi IP", reply_markup=keyboard)
 
 # Funzione per gestire la condivisione dell'IP
 @Bot.on_callback_query(filters.regex(r"share_ip_(\d+)"))
@@ -47,14 +46,14 @@ def check_ip(client, callback_query):
         user_ip = "123.456.789.000"  # Sostituisci con il metodo di acquisizione IP reale
         previous_ip = "123.456.789.000"  # Sostituisci con la logica di controllo IP
         if user_ip == previous_ip:
-            callback_query.message.edit_text("Verifica completata con successo.")
+            client.send_message(user_id, "Verifica completata con successo.")
             client.restrict_chat_member(
                 callback_query.message.chat.id, 
                 user_id, 
                 ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
             )
         else:
-            callback_query.message.edit_text("IP non corrisponde. Utente bannato.")
+            client.send_message(user_id, "IP non corrisponde. Sei stato bannato.")
             client.kick_chat_member(callback_query.message.chat.id, user_id)
 
 # Avvia il bot
