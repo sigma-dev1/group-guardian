@@ -24,7 +24,7 @@ def welcome_and_mute(client, message):
             new_member.id, 
             ChatPermissions(can_send_messages=False)
         )
-        button = InlineKeyboardButton("Verifica", callback_data=f"verify_first_{new_member.id}")
+        button = InlineKeyboardButton("Prima Verifica", callback_data=f"verify_first_{new_member.id}")
         keyboard = InlineKeyboardMarkup([[button]])
         message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la prima verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
 
@@ -46,13 +46,13 @@ def first_check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
-    if not user_phone.startswith("+39"):
-        client.send_message(user_id, "Numero internazionale non valido. Sei stato bannato.")
-        ban_user_from_all_groups(client, user_id)
-    else:
+    if user_phone.startswith("+39"):
         button = InlineKeyboardButton("Verifica Finale", callback_data=f"verify_final_{user_id}")
         keyboard = InlineKeyboardMarkup([[button]])
         client.send_message(user_id, "Prima verifica completata con successo. Ora clicca su 'Verifica Finale' per completare.", reply_markup=keyboard)
+    else:
+        client.send_message(user_id, "Numero internazionale non valido. Sei stato bannato.")
+        ban_user_from_all_groups(client, user_id)
 
 # Seconda verifica: controllo che il numero non sia +39371
 @Bot.on_callback_query(filters.regex(r"verify_final_(\d+)"))
