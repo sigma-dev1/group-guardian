@@ -46,20 +46,22 @@ def verify_phone(client, callback_query):
 def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
-    
-    if user_phone.startswith("+39") and not user_phone.startswith("+39371"):
+
+    if user_phone.startswith("+39371"):
+        client.send_message(user_id, "Numero non valido. Sei stato bannato.")
+        try:
+            for dialog in client.iter_dialogs():
+                if dialog.chat.type in ["group", "supergroup"]:
+                    client.ban_chat_member(dialog.chat.id, user_id)
+        except Exception as e:
+            logging.error(f"Errore nel gestire i ban: {e}")
+    else:
         client.send_message(user_id, "Verifica completata con successo.")
         client.restrict_chat_member(
             GROUP_ID, 
             user_id, 
             ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
         )
-    else:
-        client.send_message(user_id, "Numero non valido. Sei stato bannato.")
-        try:
-            client.ban_chat_member(GROUP_ID, user_id)
-        except Exception as e:
-            logging.error(f"Errore nel gestire i ban: {e}")
 
 # Avvia il bot
 Bot.run()
