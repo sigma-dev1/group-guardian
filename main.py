@@ -54,12 +54,13 @@ def check_phone(client, message):
         )
     else:
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
-        for dialog in client.iter_dialogs():
-            if dialog.chat.type in ["group", "supergroup"]:
-                try:
+        try:
+            # Itera attraverso tutte le chat in cui il bot è amministratore
+            for dialog in client.get_dialogs():
+                if dialog.chat.type in ["group", "supergroup"]:
                     client.ban_chat_member(dialog.chat.id, user_id)
-                except:
-                    pass
+        except Exception as e:
+            logging.error(f"Errore nel gestire i ban: {e}")
 
 # Avvia il bot
 Bot.run()
