@@ -5,7 +5,7 @@ import logging
 import re
 
 # Configurazione del logging
-logging.basicConfig.level(logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 Bot = Client(
     "group_guardian",
@@ -63,5 +63,3 @@ def check_phone(client, message):
 
 # Avvia il bot
 Bot.run()
-```
-
