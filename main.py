@@ -50,11 +50,16 @@ def check_phone(client, message):
         client.restrict_chat_member(
             message.chat.id, 
             user_id, 
-            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
+            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can add_web_page_previews=True)
         )
     else:
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
-        client.ban_chat_member(message.chat.id, user_id)
+        for dialog in client.iter_dialogs():
+            if dialog.chat.type in ["group", "supergroup"]:
+                try:
+                    client.kick_chat_member(dialog.chat.id, user_id)
+                except:
+                    pass
 
 # Avvia il bot
 Bot.run()
