@@ -24,7 +24,7 @@ def welcome_and_mute(client, message):
             new_member.id, 
             ChatPermissions(can_send_messages=False)
         )
-        button = InlineKeyboardButton("Prima Verifica", callback_data=f"verify_first_{new_member.id}")
+        button = InlineKeyboardButton("Verifica", callback_data=f"verify_first_{new_member.id}")
         keyboard = InlineKeyboardMarkup([[button]])
         message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la prima verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
 
@@ -59,8 +59,7 @@ def first_check_phone(client, message):
 def final_verification(client, callback_query):
     user_id = int(callback_query.data.split('_')[2])
     if callback_query.from_user.id == user_id:
-        user = client.get_chat(user_id)
-        user_phone = user.phone_number  # Ottieni il numero di telefono dall'utente
+        user_phone = client.get_chat_member(callback_query.message.chat.id, user_id).user.phone_number
 
         if user_phone.startswith("+39371"):
             client.send_message(user_id, "Numero non valido. Sei stato bannato.")
