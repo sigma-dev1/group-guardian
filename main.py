@@ -47,7 +47,7 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
     
-    if user_phone.startswith("+39") and not user_phone.startswith("+39 371"):
+    if user_phone.startswith("+39") and not user_phone.startswith("+39371"):
         client.send_message(user_id, "Verifica completata con successo.")
         client.restrict_chat_member(
             GROUP_ID, 
