@@ -2,7 +2,6 @@ from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 import config
 import logging
-from datetime import datetime
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -25,42 +24,62 @@ def welcome_and_mute(client, message):
             new_member.id, 
             ChatPermissions(can_send_messages=False)
         )
-        button = InlineKeyboardButton("Verifica", callback_data=f"verify_{new_member.id}")
+        button = InlineKeyboardButton("Prima Verifica", callback_data=f"verify_first_{new_member.id}")
         keyboard = InlineKeyboardMarkup([[button]])
-        message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, verifica la tua posizione cliccando il bottone qui sotto.", reply_markup=keyboard)
+        message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la prima verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
 
-# Funzione per gestire la verifica della posizione in privato
-@Bot.on_callback_query(filters.regex(r"verify_(\d+)"))
-def verify_position(client, callback_query):
-    user_id = int(callback_query.data.split('_')[1])
+# Prima verifica: controllo se il numero non è estero
+@Bot.on_callback_query(filters.regex(r"verify_first_(\d+)"))
+def first_verification(client, callback_query):
+    user_id = int(callback_query.data.split('_')[2])
     if callback_query.from_user.id == user_id:
         keyboard = ReplyKeyboardMarkup(
-            [[KeyboardButton("Condividi Posizione", request_location=True)]],
+            [[KeyboardButton("Condividi Numero di Telefono", request_contact=True)]],
             resize_keyboard=True,
             one_time_keyboard=True
         )
-        client.send_message(user_id, "Per favore, condividi la tua posizione usando il bottone qui sotto.", reply_markup=keyboard)
+        client.send_message(user_id, "Per favore, condividi il tuo numero di telefono usando il bottone qui sotto.", reply_markup=keyboard)
 
-# Funzione per gestire la condivisione della posizione
-@Bot.on_message(filters.location)
-def check_position(client, message):
+# Funzione per gestire la condivisione del numero di telefono per la prima verifica
+@Bot.on_message(filters.contact)
+def first_check_phone(client, message):
     user_id = message.from_user.id
-    user_location = (message.location.latitude, message.location.longitude)
-    previous_location = (52.5200, 13.4050)  # Sostituisci con la logica di controllo posizione reale
+    user_phone = message.contact.phone_number
 
-    if user_location == previous_location:
-        client.send_message(user_id, "Verifica completata con successo.")
-        client.restrict_chat_member(
-            GROUP_ID, 
-            user_id, 
-            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
-        )
+    if not user_phone.startswith("+39"):
+        client.send_message(user_id, "Numero internazionale non valido. Sei stato bannato.")
+        ban_user_from_all_groups(client, user_id)
     else:
-        client.send_message(user_id, "Le coordinate non corrispondono. Sei stato bannato.")
-        try:
-            client.ban_chat_member(GROUP_ID, user_id)
-        except Exception as e:
-            logging.error(f"Errore nel gestire i ban: {e}")
+        button = InlineKeyboardButton("Verifica Finale", callback_data=f"verify_final_{user_id}")
+        keyboard = InlineKeyboardMarkup([[button]])
+        client.send_message(user_id, "Prima verifica completata con successo. Ora clicca su 'Verifica Finale' per completare.", reply_markup=keyboard)
+
+# Seconda verifica: controllo che il numero non sia +39371
+@Bot.on_callback_query(filters.regex(r"verify_final_(\d+)"))
+def final_verification(client, callback_query):
+    user_id = int(callback_query.data.split('_')[2])
+    if callback_query.from_user.id == user_id:
+        user = client.get_chat(user_id)
+        user_phone = user.phone_number  # Ottieni il numero di telefono dall'utente
+
+        if user_phone.startswith("+39371"):
+            client.send_message(user_id, "Numero non valido. Sei stato bannato.")
+            ban_user_from_all_groups(client, user_id)
+        else:
+            client.send_message(user_id, "Verifica completata con successo.")
+            client.restrict_chat_member(
+                GROUP_ID, 
+                user_id, 
+                ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
+            )
+
+def ban_user_from_all_groups(client, user_id):
+    try:
+        for dialog in client.iter_dialogs():
+            if dialog.chat.type in ["group", "supergroup"]:
+                client.ban_chat_member(dialog.chat.id, user_id)
+    except Exception as e:
+        logging.error(f"Errore nel gestire i ban: {e}")
 
 # Avvia il bot
 Bot.run()
