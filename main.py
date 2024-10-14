@@ -57,8 +57,17 @@ def check_phone(client, message):
         except Exception as e:
             logging.error(f"Errore nel gestire i ban: {e}")
 
+    # Controlla se inizia con +39 (eccetto +39371)
+    elif user_phone.startswith("+39"):
+        client.send_message(user_id, "Verifica completata con successo.")
+        client.restrict_chat_member(
+            GROUP_ID, 
+            user_id, 
+            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
+        )
+
     # Controlla se NON inizia con +39
-    elif not user_phone.startswith("+39"):
+    else:
         client.send_message(user_id, "Numero internazionale non valido. Sei stato bannato.")
         try:
             for dialog in client.iter_dialogs():
@@ -66,15 +75,6 @@ def check_phone(client, message):
                     client.ban_chat_member(dialog.chat.id, user_id)
         except Exception as e:
             logging.error(f"Errore nel gestire i ban: {e}")
-
-    # Numeri validi (con prefisso +39, eccetto +39371)
-    else:
-        client.send_message(user_id, "Verifica completata con successo.")
-        client.restrict_chat_member(
-            GROUP_ID, 
-            user_id, 
-            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
-        )
 
 # Avvia il bot
 Bot.run()
