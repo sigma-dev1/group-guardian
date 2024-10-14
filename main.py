@@ -14,6 +14,8 @@ Bot = Client(
     api_hash=config.API_HASH
 )
 
+GROUP_ID = -1002202385937
+
 # Funzione per mutare i nuovi utenti
 @Bot.on_message(filters.new_chat_members)
 def welcome_and_mute(client, message):
@@ -50,15 +52,12 @@ def check_phone(client, message):
         client.restrict_chat_member(
             message.chat.id, 
             user_id, 
-            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
+            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can add_web_page_previews=True)
         )
     else:
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
         try:
-            # Itera attraverso tutte le chat in cui il bot è amministratore
-            for dialog in client.get_dialogs():
-                if dialog.chat.type in ["group", "supergroup"]:
-                    client.ban_chat_member(dialog.chat.id, user_id)
+            client.ban_chat_member(GROUP_ID, user_id)
         except Exception as e:
             logging.error(f"Errore nel gestire i ban: {e}")
 
