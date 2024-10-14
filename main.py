@@ -5,7 +5,7 @@ import logging
 import re
 
 # Configurazione del logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig.level(logging.INFO)
 
 Bot = Client(
     "group_guardian",
@@ -50,9 +50,9 @@ def check_phone(client, message):
     if user_phone.startswith("+39") and not user_phone.startswith("+39 371"):
         client.send_message(user_id, "Verifica completata con successo.")
         client.restrict_chat_member(
-            message.chat.id, 
+            GROUP_ID, 
             user_id, 
-            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can add_web_page_previews=True)
+            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
         )
     else:
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
@@ -63,3 +63,5 @@ def check_phone(client, message):
 
 # Avvia il bot
 Bot.run()
+```
+
