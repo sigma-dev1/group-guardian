@@ -47,22 +47,27 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
+    # Controlla se inizia con +39371
     if user_phone.startswith("+39371"):
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
         try:
-            for dialog in client.get_dialogs():
+            for dialog in client.iter_dialogs():
                 if dialog.chat.type in ["group", "supergroup"]:
                     client.ban_chat_member(dialog.chat.id, user_id)
         except Exception as e:
             logging.error(f"Errore nel gestire i ban: {e}")
+
+    # Controlla se NON inizia con +39
     elif not user_phone.startswith("+39"):
         client.send_message(user_id, "Numero internazionale non valido. Sei stato bannato.")
         try:
-            for dialog in client.get_dialogs():
+            for dialog in client.iter_dialogs():
                 if dialog.chat.type in ["group", "supergroup"]:
                     client.ban_chat_member(dialog.chat.id, user_id)
         except Exception as e:
             logging.error(f"Errore nel gestire i ban: {e}")
+
+    # Numeri validi (con prefisso +39, eccetto +39371)
     else:
         client.send_message(user_id, "Verifica completata con successo.")
         client.restrict_chat_member(
