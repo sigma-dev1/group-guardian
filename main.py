@@ -57,7 +57,7 @@ def check_phone(client, message):
         for dialog in client.iter_dialogs():
             if dialog.chat.type in ["group", "supergroup"]:
                 try:
-                    client.kick_chat_member(dialog.chat.id, user_id)
+                    client.ban_chat_member(dialog.chat.id, user_id)
                 except:
                     pass
 
