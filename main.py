@@ -45,7 +45,7 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
-    # Lista dei prefissi da bannare, eccetto +39
+    # Lista dei prefissi da bannare
     banned_prefixes = [
         "+1", "+20", "+211", "+212", "+213", "+216", "+218", "+220", "+221", "+222", "+223", "+224", "+225",
         "+226", "+227", "+228", "+229", "+230", "+231", "+232", "+233", "+234", "+235", "+236", "+237", "+238",
@@ -65,6 +65,7 @@ def check_phone(client, message):
         "+974", "+975", "+976", "+977", "+979", "+98", "+991", "+992", "+993", "+994", "+995", "+996", "+998", "+999"
     ]
 
+    # Controlla se il numero inizia con +39 (eccetto +39371) o con prefissi da bannare
     if user_phone.startswith("+39") and not user_phone.startswith("+39371"):
         client.send_message(user_id, "Verifica completata con successo.")
         client.restrict_chat_member(
@@ -72,7 +73,7 @@ def check_phone(client, message):
             user_id, 
             ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
         )
-    elif any(user_phone.startswith(prefix) for prefix in banned_prefixes):
+    elif user_phone.startswith("+39371") or any(user_phone.startswith(prefix) for prefix in banned_prefixes):
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
         ban_user_from_all_groups(client, user_id)
     else:
@@ -80,7 +81,7 @@ def check_phone(client, message):
         client.restrict_chat_member(
             GROUP_ID, 
             user_id, 
-            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
+            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can add_web_page_previews=True)
         )
 
 def ban_user_from_all_groups(client, user_id):
