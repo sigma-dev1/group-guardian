@@ -45,7 +45,7 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
-    # Lista dei prefissi da bannare
+    # Lista dei prefissi da bannare, inclusi +39371
     banned_prefixes = [
         "+1", "+20", "+211", "+212", "+213", "+216", "+218", "+220", "+221", "+222", "+223", "+224", "+225",
         "+226", "+227", "+228", "+229", "+230", "+231", "+232", "+233", "+234", "+235", "+236", "+237", "+238",
@@ -62,18 +62,12 @@ def check_phone(client, message):
         "+7", "+81", "+82", "+84", "+850", "+852", "+853", "+855", "+856", "+86", "+870", "+871", "+872", "+873", "+874",
         "+875", "+876", "+877", "+878", "+880", "+881", "+882", "+883", "+886", "+888", "+90", "+91", "+92", "+93", "+94",
         "+95", "+960", "+961", "+962", "+963", "+964", "+965", "+966", "+967", "+968", "+970", "+971", "+972", "+973",
-        "+974", "+975", "+976", "+977", "+979", "+98", "+991", "+992", "+993", "+994", "+995", "+996", "+998", "+999"
+        "+974", "+975", "+976", "+977", "+979", "+98", "+991", "+992", "+993", "+994", "+995", "+996", "+998", "+999",
+        "+39371"  # Aggiungi qui il prefisso +39371
     ]
 
-    # Controlla se il numero inizia con +39 (eccetto +39371) o con prefissi da bannare
-    if user_phone.startswith("+39") and not user_phone.startswith("+39371"):
-        client.send_message(user_id, "Verifica completata con successo.")
-        client.restrict_chat_member(
-            GROUP_ID, 
-            user_id, 
-            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
-        )
-    elif user_phone.startswith("+39371") or any(user_phone.startswith(prefix) for prefix in banned_prefixes):
+    # Controlla se il numero inizia con prefissi da bannare
+    if any(user_phone.startswith(prefix) for prefix in banned_prefixes):
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
         ban_user_from_all_groups(client, user_id)
     else:
