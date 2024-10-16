@@ -45,17 +45,16 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
-    if user_phone.startswith("+39"):
-        if user_phone.startswith("+39371"):
-            client.send_message(user_id, "Numero non valido. Sei stato bannato.")
-            ban_user_from_all_groups(client, user_id)
-        else:
-            client.send_message(user_id, "Verifica completata con successo.")
-            client.restrict_chat_member(
-                GROUP_ID, 
-                user_id, 
-                ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
-            )
+    banned_numbers = ["+39371"]  # Lista di numeri da bannare
+
+    # Verifica il numero di telefono
+    if user_phone.startswith("+39") and user_phone not in banned_numbers:
+        client.send_message(user_id, "Verifica completata con successo.")
+        client.restrict_chat_member(
+            GROUP_ID, 
+            user_id, 
+            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
+        )
     else:
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
         ban_user_from_all_groups(client, user_id)
