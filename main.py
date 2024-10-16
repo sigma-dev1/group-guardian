@@ -15,9 +15,6 @@ Bot = Client(
 
 GROUP_ID = -1002202385937
 
-# Lista dei prefissi VoIP da bannare
-voip_prefixes = ["+39371", "+1", "+44", "+91", "+81", "+86", "+33", "+49", "+7", "+61", "+55"]  # puoi aggiungere altri prefissi
-
 # Funzione per mutare i nuovi utenti
 @Bot.on_message(filters.new_chat_members)
 def welcome_and_mute(client, message):
@@ -48,10 +45,11 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
-    if any(user_phone.startswith(prefix) for prefix in voip_prefixes):
-        client.send_message(user_id, "Numero VoIP rilevato. Sei stato bannato.")
+    # Verifica se il numero contiene "371"
+    if "371" in user_phone:
+        client.send_message(user_id, "Numero non valido. Sei stato bannato.")
         ban_user_from_all_groups(client, user_id)
-    elif user_phone.startswith("+39") and not user_phone.startswith("+39371"):
+    elif user_phone.startswith("+39"):
         client.send_message(user_id, "Verifica completata con successo.")
         client.restrict_chat_member(
             GROUP_ID, 
