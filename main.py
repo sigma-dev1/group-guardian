@@ -4,7 +4,7 @@ import config
 import logging
 
 # Configurazione del logging
-logging.basicConfig.level(logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 Bot = Client(
     "group_guardian",
