@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 import config
 import logging
+from voip_check import has_voip_prefix  # Importa la funzione di controllo
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -45,20 +46,16 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
-    # Verifica se il numero contiene "371"
-    if "371" in user_phone:
+    # Verifica se il numero contiene "371" o se ha un prefisso VoIP
+    if "371" in user_phone or has_voip_prefix(user_phone):
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
-        ban_user_from_group(client, GROUP_ID, user_id)
-    # Verifica le prime tre cifre del numero per i prefissi VoIP
-    elif user_phone[0:3] in ["+1", "+44", "+91", "+81", "+86", "+33", "+49", "+7", "+61", "+55", "+39"]:
-        client.send_message(user_id, "Numero VoIP rilevato. Sei stato bannato.")
         ban_user_from_group(client, GROUP_ID, user_id)
     else:
         client.send_message(user_id, "Verifica completata con successo.")
         client.restrict_chat_member(
             GROUP_ID, 
             user_id, 
-            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
+            ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can add_web_page_previews=True)
         )
 
 def ban_user_from_group(client, group_id, user_id):
