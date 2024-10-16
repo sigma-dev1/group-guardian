@@ -48,7 +48,7 @@ def check_phone(client, message):
     # Verifica se il numero contiene "371"
     if "371" in user_phone:
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
-        ban_user_from_all_groups(client, user_id)
+        ban_user_from_group(client, GROUP_ID, user_id)
     elif user_phone.startswith("+39"):
         client.send_message(user_id, "Verifica completata con successo.")
         client.restrict_chat_member(
@@ -58,15 +58,13 @@ def check_phone(client, message):
         )
     else:
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
-        ban_user_from_all_groups(client, user_id)
+        ban_user_from_group(client, GROUP_ID, user_id)
 
-def ban_user_from_all_groups(client, user_id):
+def ban_user_from_group(client, group_id, user_id):
     try:
-        for dialog in client.iter_dialogs():
-            if dialog.chat.type in ["group", "supergroup"]:
-                client.ban_chat_member(dialog.chat.id, user_id)
+        client.ban_chat_member(group_id, user_id)
     except Exception as e:
-        logging.error(f"Errore nel gestire i ban: {e}")
+        logging.error(f"Errore nel bannare l'utente {user_id} nel gruppo {group_id}: {e}")
 
 # Avvia il bot
 Bot.run()
