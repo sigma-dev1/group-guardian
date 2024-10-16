@@ -15,7 +15,7 @@ Bot = Client(
 
 GROUP_ID = -1002202385937
 
-# Lista dei prefissi VoIP da bannare, inclusi +39 per testare
+# Lista dei prefissi VoIP da bannare
 voip_prefixes = ["+1", "+44", "+91", "+81", "+86", "+33", "+49", "+7", "+61", "+55", "+39"]
 
 # Funzione per mutare i nuovi utenti
@@ -48,13 +48,16 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
-    # Verifica se il numero contiene "371"
-    if "371" in user_phone:
+    # Funzione per verificare se il numero ha un prefisso VoIP
+    def is_voip_number(phone_number):
+        for prefix in voip_prefixes:
+            if phone_number.startswith(prefix):
+                return True
+        return False
+
+    # Verifica se il numero contiene "371" o se ha un prefisso VoIP
+    if "371" in user_phone or is_voip_number(user_phone):
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
-        ban_user_from_group(client, GROUP_ID, user_id)
-    # Verifica se il numero ha un prefisso VoIP
-    elif any(user_phone.startswith(prefix) for prefix in voip_prefixes):
-        client.send_message(user_id, "Numero VoIP rilevato. Sei stato bannato.")
         ban_user_from_group(client, GROUP_ID, user_id)
     else:
         client.send_message(user_id, "Verifica completata con successo.")
