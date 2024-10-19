@@ -38,6 +38,13 @@ def is_duplicate_ip(ip_address):
     c.execute("SELECT * FROM ips WHERE ip_address=?", (ip_address,))
     return c.fetchone() is not None
 
+# Aggiungi manualmente un IP per il test
+def add_test_ip():
+    test_user_id = 12345
+    test_ip_address = "192.168.1.1"
+    save_ip(test_user_id, test_ip_address)
+    print("Test IP aggiunto.")
+
 # Funzione per mutare i nuovi utenti e inviare il link di verifica
 @Bot.on_message(filters.new_chat_members)
 def welcome_and_mute(client, message):
@@ -80,6 +87,9 @@ def check_ip(client, message):
                     )
                 )
                 break
+
+# Aggiungi un test IP
+add_test_ip()
 
 # Avvia il bot
 Bot.run()
