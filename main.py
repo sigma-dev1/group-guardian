@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 import config
 import logging
+from blocked_numbers import is_blocked_number  # Importa la funzione di controllo
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -45,12 +46,8 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
-    # Verifica se il numero contiene "371"
-    if "371" in user_phone:
-        client.send_message(user_id, "Numero non valido. Sei stato bannato.")
-        ban_user_from_group(client, GROUP_ID, user_id)
-    # Verifica se il numero contiene "+39"
-    elif "+39" in user_phone:
+    # Verifica se il numero è bloccato
+    if is_blocked_number(user_phone):
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
         ban_user_from_group(client, GROUP_ID, user_id)
     else:
