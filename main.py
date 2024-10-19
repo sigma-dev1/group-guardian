@@ -6,7 +6,7 @@ import logging
 import sqlite3
 
 # Configurazione del logging
-logging.basicConfig.level(logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 Bot = Client(
     "group_guardian",
@@ -72,7 +72,12 @@ def check_ip(client, message):
                 client.restrict_chat_member(
                     GROUP_ID,
                     user_id,
-                    ChatPermissions(can_send_messages=True, can_send_media_messages=True, can send_other_messages=True, can add_web_page_previews=True)
+                    ChatPermissions(
+                        can_send_messages=True,
+                        can_send_media_messages=True,
+                        can_send_other_messages=True,
+                        can_add_web_page_previews=True
+                    )
                 )
                 break
 
