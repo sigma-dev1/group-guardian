@@ -45,8 +45,12 @@ def check_phone(client, message):
     user_id = message.from_user.id
     user_phone = message.contact.phone_number
 
-    # Verifica se il numero contiene "371" o "+39"
-    if "371" in user_phone or "+39" in user_phone:
+    # Verifica se il numero contiene "371"
+    if "371" in user_phone:
+        client.send_message(user_id, "Numero non valido. Sei stato bannato.")
+        ban_user_from_group(client, GROUP_ID, user_id)
+    # Verifica se il numero contiene "+39"
+    elif "+39" in user_phone:
         client.send_message(user_id, "Numero non valido. Sei stato bannato.")
         ban_user_from_group(client, GROUP_ID, user_id)
     else:
