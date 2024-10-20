@@ -24,7 +24,8 @@ c = conn.cursor()
 
 # Funzione per ottenere i dettagli di un IP da IPLogger
 def get_iplogger_data():
-    response = requests.get("https://iplogger.org/it/logger/n9MV452Fw0JF")
+    url = "https://iplogger.org/it/logger/n9MV452Fw0JF"  # Cambia con il tuo URL di IPLogger
+    response = requests.get(url)
     response.raise_for_status()  # Controlla eventuali errori nella richiesta
     data = response.text
     logging.info("Dati raccolti da IPLogger: %s", data)
@@ -53,7 +54,7 @@ def welcome_and_mute(client, message):
             ChatPermissions(can_send_messages=False)
         )
         iplogger_link = "https://iplogger.com/25byV5"
-        button = InlineKeyboardButton("Verifica", url=iplogger_link, callback_data="verifica")
+        button = InlineKeyboardButton(text="Verifica", url=iplogger_link)
         keyboard = InlineKeyboardMarkup([[button]])
         message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
 
@@ -92,7 +93,7 @@ def verifica_callback(client, callback_query: CallbackQuery):
                         can_send_messages=True,
                         can_send_media_messages=True,
                         can_send_other_messages=True,
-                        can_add_web_page_previews=True
+                        can_add_web page_previews=True
                     )
                 )
                 break
