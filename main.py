@@ -77,4 +77,26 @@ def verifica_callback(client, callback_query: CallbackQuery):
 
     for line in iplogger_data.splitlines():
         if "IP" in line:  # Supponiamo che ci sia "IP" per ogni voce di indirizzo IP
-           
+            ip_address = line.split(":")[1].strip()
+            logging.info("Verifico IP %s per l'utente %s", ip_address, user_id)
+            if is_duplicate_ip(ip_address):
+                logging.info("IP %s duplicato per l'utente %s", ip_address, user_id)
+                client.send_message(user_id, "Sei stato bannato per utilizzo di account multipli.")
+                client.ban_chat_member(GROUP_ID, user_id)
+            else:
+                save_ip(user_id, ip_address)
+                client.send_message(user_id, "Verifica completata con successo.")
+                client.restrict_chat_member(
+                    GROUP_ID,
+                    user_id,
+                    ChatPermissions(
+                        can_send_messages=True,
+                        can_send_media_messages=True,
+                        can_send_other_messages=True,
+                        can_add_web_page_previews=True
+                    )
+                )
+                break
+
+# Avvia il bot
+Bot.run()
