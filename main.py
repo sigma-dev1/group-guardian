@@ -1,6 +1,7 @@
 import requests
 import logging
 from pyrogram import Client
+import config
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -8,9 +9,9 @@ logging.basicConfig(level=logging.INFO)
 # Configurazione del bot
 bot = Client(
     "group_guardian",
-    bot_token="YOUR_TELEGRAM_BOT_TOKEN",
-    api_id="YOUR_API_ID",
-    api_hash="YOUR_API_HASH"
+    bot_token=config.BOT_TOKEN,
+    api_id=config.API_ID,
+    api_hash=config.API_HASH
 )
 
 def get_ip():
