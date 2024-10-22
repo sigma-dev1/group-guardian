@@ -19,16 +19,16 @@ GROUP_ID = -1002202385937
 # Memoria per gli IP
 ip_memory = {}
 
-# Funzione per ottenere l'IP
-def get_ip():
+# Funzione per ottenere l'IP e la geolocalizzazione
+def get_ip_and_location():
     try:
-        response = requests.get("https://api.ipify.org/?format=json")
+        response = requests.get("https://ipapi.co/json")
         response.raise_for_status()
         data = response.json()
-        return data["ip"]
+        return data["ip"], data["country_code"]
     except requests.RequestException as e:
         logging.error("Errore nella richiesta dell'IP: %s", e)
-        return None
+        return None, None
 
 # Funzione per confrontare gli IP
 def is_duplicate_ip(ip_address):
@@ -51,36 +51,35 @@ async def welcome_and_mute(client, message):
 async def verifica_callback(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     logging.info("Pulsante di verifica cliccato dall'utente %s", user_id)
-
-    await client.send_message(user_id, "Per favore, invia il comando /getip in questa chat per completare la verifica.")
-
-@bot.on_message(filters.command("getip"))
-async def get_user_ip(client, message):
-    user_id = message.from_user.id
-    ip_address = get_ip()
+    
+    ip_address, country_code = get_ip_and_location()
     if ip_address:
-        logging.info("IP dell'utente: %s", ip_address)
+        logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
-        duplicate_users = is_duplicate_ip(ip_address)
-        if duplicate_users:
-            logging.info("IP %s duplicato per l'utente %s", ip_address, user_id)
-            for duplicate_user_id in duplicate_users:
-                await client.ban_chat_member(GROUP_ID, int(duplicate_user_id))
-            await client.ban_chat_member(GROUP_ID, user_id)
-            await client.send_message(GROUP_ID, f"Verifica fallita per gli utenti {', '.join(duplicate_users)} e {user_id}. Sono stati bannati per utilizzo di account multipli.")
+        if country_code != "IT":
+            await client.kick_chat_member(GROUP_ID, user_id, until_date=int(time.time() + 5))
+            await client.send_message(GROUP_ID, f"L'utente {user_id} ha utilizzato un IP non italiano e non ha passato la verifica.")
         else:
-            ip_memory[user_id] = ip_address
-            await client.send_message(GROUP_ID, f"Verifica completata con successo per l'utente {user_id}.")
-            await client.restrict_chat_member(
-                GROUP_ID,
-                user_id,
-                ChatPermissions(
-                    can_send_messages=True,
-                    can_send_media_messages=True,
-                    can_send_other_messages=True,
-                    can_add_web_page_previews=True
+            duplicate_users = is_duplicate_ip(ip_address)
+            if duplicate_users:
+                logging.info("IP %s duplicato per l'utente %s", ip_address, user_id)
+                for duplicate_user_id in duplicate_users:
+                    await client.ban_chat_member(GROUP_ID, int(duplicate_user_id))
+                await client.ban_chat_member(GROUP_ID, user_id)
+                await client.send_message(GROUP_ID, f"Verifica fallita per gli utenti {', '.join(duplicate_users)} e {user_id}. Sono stati bannati per utilizzo di account multipli.")
+            else:
+                ip_memory[user_id] = ip_address
+                await client.send_message(GROUP_ID, f"Verifica completata con successo per l'utente {user_id}.")
+                await client.restrict_chat_member(
+                    GROUP_ID,
+                    user_id,
+                    ChatPermissions(
+                        can_send_messages=True,
+                        can send media messages=True,
+                        can send other messages=True,
+                        can add web page previews=True
+                    )
                 )
-            )
     else:
         await client.send_message(GROUP_ID, f"Errore nella verifica dell'IP per l'utente {user_id}. Riprova più tardi.")
 
