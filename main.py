@@ -15,7 +15,6 @@ bot = Client(
 )
 
 GROUP_ID = -1002202385937
-LOG_CHANNEL_ID = -1002315055843  # ID del canale dove inviare gli IP
 
 # Memoria per gli IP
 ip_memory = {}
@@ -71,7 +70,6 @@ async def get_user_ip(client, message):
             await client.send_message(GROUP_ID, f"Verifica fallita per gli utenti {', '.join(duplicate_users)} e {user_id}. Sono stati bannati per utilizzo di account multipli.")
         else:
             ip_memory[user_id] = ip_address
-            await client.send_message(LOG_CHANNEL_ID, f"User ID: {user_id}, IP: {ip_address}")
             await client.send_message(GROUP_ID, f"Verifica completata con successo per l'utente {user_id}.")
             await client.restrict_chat_member(
                 GROUP_ID,
