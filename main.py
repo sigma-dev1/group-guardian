@@ -3,6 +3,7 @@ import logging
 from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 import config
+import time
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -75,13 +76,10 @@ async def verifica_callback(client, callback_query: CallbackQuery):
                     user_id,
                     ChatPermissions(
                         can_send_messages=True,
-                        can send media messages=True,
-                        can send other messages=True,
-                        can add web page previews=True
+                        can_send_media_messages=True,
+                        can_send_other_messages=True,
+                        can_add_web_page_previews=True
                     )
                 )
     else:
-        await client.send_message(GROUP_ID, f"Errore nella verifica dell'IP per l'utente {user_id}. Riprova più tardi.")
-
-# Avvia il bot
-bot.run()
+        await client.send_message(GROUP_ID, f"Errore nella verifica dell'IP per l'utente {user_id}. Riprova più
