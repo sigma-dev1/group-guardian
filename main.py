@@ -82,4 +82,7 @@ async def verifica_callback(client, callback_query: CallbackQuery):
                     )
                 )
     else:
-        await client.send_message(GROUP_ID, f"Errore nella verifica dell'IP per l'utente {user_id}. Riprova più
+        await client.send_message(GROUP_ID, f"Errore nella verifica dell'IP per l'utente {user_id}. Riprova più tardi.")
+
+# Avvia il bot
+bot.run()
