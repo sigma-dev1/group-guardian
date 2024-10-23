@@ -4,6 +4,7 @@ from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
 import config
 import time
+import asyncio
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -21,9 +22,9 @@ GROUP_ID = -1002202385937
 ip_memory = {}
 
 # Funzione per ottenere l'IP e la geolocalizzazione
-def get_ip_and_location():
+async def get_ip_and_location():
     try:
-        response = requests.get("https://ipapi.co/json")
+        response = await asyncio.to_thread(requests.get, "https://ipapi.co/json")
         response.raise_for_status()
         data = response.json()
         return data["ip"], data["country_code"]
@@ -49,18 +50,19 @@ async def welcome_and_mute(client, message):
         keyboard = InlineKeyboardMarkup([[button]])
         await message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
 
-@bot.on_message(filters.regex(r"^/start verifica_\d+$"))
+@bot.on_message(filters.regex(r"^/verifica_\d+$"))
 async def verifica_callback(client, message):
     user_id = int(message.text.split("_")[1])
     logging.info("Pulsante di verifica cliccato dall'utente %s", user_id)
     
-    ip_address, country_code = get_ip_and_location()
+    ip_address, country_code = await get_ip_and_location()
     if ip_address:
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
         if country_code != "IT":
             await client.ban_chat_member(GROUP_ID, user_id, until_date=int(time.time() + 5))
             await client.send_message(GROUP_ID, f"L'utente {user_id} ha utilizzato un IP non italiano e non ha passato la verifica.")
+            await client.send_message(user_id, "Hai utilizzato un IP non italiano e non hai passato la verifica.")
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
@@ -69,9 +71,11 @@ async def verifica_callback(client, message):
                     await client.ban_chat_member(GROUP_ID, int(duplicate_user_id))
                 await client.ban_chat_member(GROUP_ID, user_id)
                 await client.send_message(GROUP_ID, f"Verifica fallita per gli utenti {', '.join(duplicate_users)} e {user_id}. Sono stati bannati per utilizzo di account multipli.")
+                await client.send_message(user_id, "Hai utilizzato un IP duplicato e non hai passato la verifica.")
             else:
                 ip_memory[user_id] = ip_address
                 confirmation_message = await client.send_message(GROUP_ID, f"Verifica completata con successo per l'utente {user_id}.")
+                await client.send_message(user_id, "Verifica completata con successo.")
                 await client.restrict_chat_member(
                     GROUP_ID,
                     user_id,
@@ -86,6 +90,7 @@ async def verifica_callback(client, message):
                 await client.delete_messages(GROUP_ID, confirmation_message.message_id)
     else:
         error_message = await client.send_message(GROUP_ID, f"Errore nella verifica dell'IP per l'utente {user_id}. Riprova più tardi.")
+        await client.send_message(user_id, "Errore nella verifica dell'IP. Riprova più tardi.")
         await asyncio.sleep(30)  # Aspetta 30 secondi prima di eliminare il messaggio di errore
         await client.delete_messages(GROUP_ID, error_message.message_id)
 
