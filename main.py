@@ -45,7 +45,7 @@ async def welcome_and_mute(client, message):
             ChatPermissions(can_send_messages=False)
         )
         verification_link = f"https://t.me/{client.me.username}?start=verifica_{new_member.id}"
-        button = InlineKeyboardButton(text="Verifica", url=verification_link)
+        button = InlineKeyboardButton(text="✅ Verifica", url=verification_link)
         keyboard = InlineKeyboardMarkup([[button]])
         await message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
 
@@ -59,7 +59,7 @@ async def verifica_callback(client, message):
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
         if country_code != "IT":
-            await client.kick_chat_member(GROUP_ID, user_id, until_date=int(time.time() + 5))
+            await client.ban_chat_member(GROUP_ID, user_id, until_date=int(time.time() + 5))
             await client.send_message(GROUP_ID, f"L'utente {user_id} ha utilizzato un IP non italiano e non ha passato la verifica.")
         else:
             duplicate_users = is_duplicate_ip(ip_address)
@@ -71,7 +71,7 @@ async def verifica_callback(client, message):
                 await client.send_message(GROUP_ID, f"Verifica fallita per gli utenti {', '.join(duplicate_users)} e {user_id}. Sono stati bannati per utilizzo di account multipli.")
             else:
                 ip_memory[user_id] = ip_address
-                await client.send_message(GROUP_ID, f"Verifica completata con successo per l'utente {user_id}.")
+                confirmation_message = await client.send_message(GROUP_ID, f"Verifica completata con successo per l'utente {user_id}.")
                 await client.restrict_chat_member(
                     GROUP_ID,
                     user_id,
@@ -82,8 +82,12 @@ async def verifica_callback(client, message):
                         can_add_web_page_previews=True
                     )
                 )
+                await asyncio.sleep(30)  # Aspetta 30 secondi prima di eliminare il messaggio di conferma
+                await client.delete_messages(GROUP_ID, confirmation_message.message_id)
     else:
-        await client.send_message(GROUP_ID, f"Errore nella verifica dell'IP per l'utente {user_id}. Riprova più tardi.")
+        error_message = await client.send_message(GROUP_ID, f"Errore nella verifica dell'IP per l'utente {user_id}. Riprova più tardi.")
+        await asyncio.sleep(30)  # Aspetta 30 secondi prima di eliminare il messaggio di errore
+        await client.delete_messages(GROUP_ID, error_message.message_id)
 
 # Avvia il bot
 bot.run()
