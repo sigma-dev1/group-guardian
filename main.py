@@ -34,6 +34,16 @@ async def get_ip_and_location():
 def is_duplicate_ip(ip_address):
     return [user_id for user_id, ip in ip_memory.items() if ip == ip_address]
 
+# Funzione per bannare l'utente
+async def ban_user(client, chat_id, user_id, reason):
+    await client.ban_chat_member(chat_id, user_id)
+    await client.send_message(chat_id, f"{reason} {user_id} è stato bannato.")
+
+# Funzione per sbloccare l'utente
+async def unban_user(client, chat_id, user_id):
+    await client.unban_chat_member(chat_id, user_id)
+    await client.send_message(chat_id, f"{user_id} è stato sbloccato.")
+
 @bot.on_message(filters.new_chat_members)
 async def welcome_and_mute(client, message):
     for new_member in message.new_chat_members:
@@ -47,6 +57,9 @@ async def welcome_and_mute(client, message):
         button = InlineKeyboardButton(text="✅ Verifica", url=verification_link)
         keyboard = InlineKeyboardMarkup([[button]])
         await message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
+        await asyncio.sleep(10800)  # Aspetta 3 ore
+        if new_member.id not in ip_memory:
+            await ban_user(client, message.chat.id, new_member.id, "Tempo di verifica scaduto.")
 
 @bot.on_message(filters.regex(r"^/start verifica_\d+$"))
 async def verifica_callback(client, message):
@@ -58,21 +71,20 @@ async def verifica_callback(client, message):
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
         if country_code != "IT":
-            await client.ban_chat_member(message.chat.id, user_id, until_date=int(time.time() + 5))
-            await client.send_message(message.chat.id, f"L'utente {user_id} ha utilizzato un IP non italiano e non ha passato la verifica.")
-            await client.send_message(user_id, "Hai utilizzato un IP non italiano e non hai passato la verifica.")
+            await ban_user(client, message.chat.id, user_id, "IP non italiano rilevato.")
+            unban_button = InlineKeyboardButton(text="Sblocca", callback_data=f"unban_{user_id}")
+            await client.send_message(message.chat.id, "Richiesta di sblocco inviata.", reply_markup=InlineKeyboardMarkup([[unban_button]]))
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
-                logging.info("IP %s duplicato per l'utente %s", ip_address, user_id)
                 for duplicate_user_id in duplicate_users:
-                    await client.ban_chat_member(message.chat.id, int(duplicate_user_id))
-                await client.ban_chat_member(message.chat.id, user_id)
-                await client.send_message(message.chat.id, f"Verifica fallita per gli utenti {', '.join(duplicate_users)} e {user_id}. Sono stati bannati per utilizzo di account multipli.")
-                await client.send_message(user_id, "Hai utilizzato un IP duplicato e non hai passato la verifica.")
+                    await ban_user(client, message.chat.id, int(duplicate_user_id), "Account multiplo rilevato.")
+                await ban_user(client, message.chat.id, user_id, "Account multiplo rilevato.")
+                unban_button = InlineKeyboardButton(text="Sblocca", callback_data=f"unban_{user_id}")
+                await client.send_message(message.chat.id, "Richiesta di sblocco inviata.", reply_markup=InlineKeyboardMarkup([[unban_button]]))
             else:
                 ip_memory[user_id] = ip_address
-                confirmation_message = await client.send_message(message.chat.id, f"Verifica completata con successo per l'utente {user_id}.")
+                confirmation_message = await client.send_message(message.chat.id, f"Verifica completata con successo per {message.from_user.first_name} {message.from_user.last_name}.")
                 await client.send_message(user_id, "Verifica completata con successo.")
                 await client.restrict_chat_member(
                     message.chat.id,
@@ -84,13 +96,19 @@ async def verifica_callback(client, message):
                         can_add_web_page_previews=True
                     )
                 )
-                await asyncio.sleep(30)  # Aspetta 30 secondi prima di eliminare il messaggio di conferma
+                await asyncio.sleep(10800)  # Aspetta 3 ore
                 await client.delete_messages(message.chat.id, confirmation_message.message_id)
     else:
-        error_message = await client.send_message(message.chat.id, f"Errore nella verifica dell'IP per l'utente {user_id}. Riprova più tardi.")
-        await client.send_message(user_id, "Errore nella verifica dell'IP. Riprova più tardi.")
-        await asyncio.sleep(30)  # Aspetta 30 secondi prima di eliminare il messaggio di errore
+        error_message = await client.send_message(message.chat.id, f"Errore nella verifica per {message.from_user.first_name} {message.from_user.last_name}. Riprova più tardi.")
+        await client.send_message(user_id, "Errore nella verifica. Riprova più tardi.")
+        await asyncio.sleep(10800)  # Aspetta 3 ore
         await client.delete_messages(message.chat.id, error_message.message_id)
+
+@bot.on_callback_query(filters.regex(r"unban_"))
+async def unban_callback(client, callback_query):
+    user_id = int(callback_query.data.split("_")[1])
+    chat_id = callback_query.message.chat.id
+    await unban_user(client, chat_id, user_id)
 
 @bot.on_message(filters.command("start"))
 async def start(client, message):
