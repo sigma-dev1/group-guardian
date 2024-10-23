@@ -1,7 +1,7 @@
 import requests
 import logging
 from pyrogram import Client, filters
-from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
 import config
 import time
 
@@ -44,13 +44,14 @@ async def welcome_and_mute(client, message):
             new_member.id,
             ChatPermissions(can_send_messages=False)
         )
-        button = InlineKeyboardButton(text="Verifica", callback_data="verifica")
+        verification_link = f"https://t.me/{client.me.username}?start=verifica_{new_member.id}"
+        button = InlineKeyboardButton(text="Verifica", url=verification_link)
         keyboard = InlineKeyboardMarkup([[button]])
         await message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
 
-@bot.on_callback_query(filters.regex(r"verifica"))
-async def verifica_callback(client, callback_query: CallbackQuery):
-    user_id = callback_query.from_user.id
+@bot.on_message(filters.regex(r"^/start verifica_\d+$"))
+async def verifica_callback(client, message):
+    user_id = int(message.text.split("_")[1])
     logging.info("Pulsante di verifica cliccato dall'utente %s", user_id)
     
     ip_address, country_code = get_ip_and_location()
