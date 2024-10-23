@@ -50,7 +50,7 @@ async def welcome_and_mute(client, message):
         keyboard = InlineKeyboardMarkup([[button]])
         await message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
 
-@bot.on_message(filters.regex(r"^/verifica_\d+$"))
+@bot.on_message(filters.regex(r"^/start verifica_\d+$"))
 async def verifica_callback(client, message):
     user_id = int(message.text.split("_")[1])
     logging.info("Pulsante di verifica cliccato dall'utente %s", user_id)
