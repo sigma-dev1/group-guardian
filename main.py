@@ -21,6 +21,7 @@ GROUP_ID = -1002202385937
 # Memoria per gli IP
 ip_memory = {}
 verifica_tasks = {}
+bot_messages = []
 
 # Funzione per ottenere l'IP e la geolocalizzazione
 async def get_ip_and_location():
@@ -45,7 +46,7 @@ async def ban_user(client, chat_id, user_id, reason):
 # Funzione per sbloccare l'utente
 async def unban_user(client, chat_id, user_id):
     await client.unban_chat_member(chat_id, user_id)
-    await client.send_message(chat_id, f"{user_id} è stato sbloccato.")
+    await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
 
 @bot.on_message(filters.new_chat_members)
 async def welcome_and_mute(client, message):
@@ -60,6 +61,7 @@ async def welcome_and_mute(client, message):
         button = InlineKeyboardButton(text="✅ Verifica", url=verification_link)
         keyboard = InlineKeyboardMarkup([[button]])
         welcome_message = await message.reply_text(f"Benvenuto {new_member.first_name or new_member.username}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
+        bot_messages.append(welcome_message.id)
         
         task = asyncio.create_task(timer(client, message.chat.id, new_member.id, welcome_message.id))
         verifica_tasks[new_member.id] = task
@@ -69,6 +71,7 @@ async def timer(client, chat_id, user_id, message_id):
     if user_id not in ip_memory:
         await ban_user(client, chat_id, user_id, f"{user_id} non ha passato la verifica ed è stato bannato.")
         await client.delete_messages(chat_id, [message_id])
+        bot_messages.remove(message_id)
 
 @bot.on_message(filters.regex(r"^/start verifica_\d+$"))
 async def verifica_callback(client, message):
@@ -104,13 +107,37 @@ async def verifica_callback(client, message):
                         can_add_web_page_previews=True
                     )
                 )
+                # Aggiungi pulsante di sblocco
+                unban_button = InlineKeyboardButton(text="🔓 Unbanna", callback_data=f"unban_{user_id}")
+                unban_keyboard = InlineKeyboardMarkup([[unban_button]])
+                unban_message = await client.send_message(GROUP_ID, f"Se questo utente è stato bannato per errore, clicca qui per sbloccarlo.", reply_markup=unban_keyboard)
+                bot_messages.append(unban_message.id)
 
 @bot.on_callback_query(filters.regex(r"unban_"))
 async def unban_callback(client, callback_query):
     user_id = int(callback_query.data.split("_")[1])
     chat_id = callback_query.message.chat.id
     await unban_user(client, chat_id, user_id)
-    await client.send_message(chat_id, f"{user_id} è stato sbloccato.")
+    await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
+    bot_messages.append(callback_query.message.id)
+
+# Comando per cancellare i messaggi del bot
+@bot.on_message(filters.command("cancella"))
+async def delete_bot_messages(client, message):
+    for msg_id in bot_messages:
+        await client.delete_messages(message.chat.id, msg_id)
+    bot_messages.clear()
+
+# Funzione per cancellare i messaggi del bot ogni 2 ore
+async def auto_delete_messages():
+    while True:
+        await asyncio.sleep(7200)  # 2 ore
+        for msg_id in bot_messages:
+            await bot.delete_messages(GROUP_ID, msg_id)
+        bot_messages.clear()
+
+# Avvia il task di auto-cancellazione
+bot.add_handler(auto_delete_messages())
 
 # Avvia il bot
 bot.run()
