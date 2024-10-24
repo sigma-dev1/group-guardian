@@ -26,6 +26,7 @@ GROUP_IDS = [
 
 # Memoria per gli IP
 ip_memory = {}
+verifica_tasks = {}
 
 # Funzione per ottenere l'IP e la geolocalizzazione
 async def get_ip_and_location():
@@ -65,15 +66,23 @@ async def welcome_and_mute(client, message):
         button = InlineKeyboardButton(text="✅ Verifica", url=verification_link)
         keyboard = InlineKeyboardMarkup([[button]])
         welcome_message = await message.reply_text(f"Benvenuto {new_member.first_name or new_member.username}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
-        await asyncio.sleep(180)  # Aspetta 3 minuti
-        if new_member.id not in ip_memory:
-            await ban_user(client, message.chat.id, new_member.id, f"{new_member.first_name or new_member.username} non ha passato la verifica ed è stato bannato.")
-            await client.delete_messages(message.chat.id, [welcome_message.message_id])
+        
+        task = asyncio.create_task(timer(client, message.chat.id, new_member.id, welcome_message.message_id))
+        verifica_tasks[new_member.id] = task
+
+async def timer(client, chat_id, user_id, message_id):
+    await asyncio.sleep(180)  # Aspetta 3 minuti
+    if user_id not in ip_memory:
+        await ban_user(client, chat_id, user_id, f"{user_id} non ha passato la verifica ed è stato bannato.")
+        await client.delete_messages(chat_id, [message_id])
 
 @bot.on_message(filters.regex(r"^/start verifica_\d+$"))
 async def verifica_callback(client, message):
     user_id = int(message.text.split("_")[1])
     logging.info("Pulsante di verifica cliccato dall'utente %s", user_id)
+    
+    if user_id in verifica_tasks:
+        verifica_tasks[user_id].cancel()
     
     ip_address, country_code = await get_ip_and_location()
     if ip_address:
