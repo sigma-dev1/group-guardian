@@ -83,7 +83,7 @@ async def verifica_callback(client, message):
     
     if user_id in verifica_tasks:
         verifica_tasks[user_id].cancel()
-    
+        
     ip_address, country_code = await get_ip_and_location()
     if ip_address:
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
