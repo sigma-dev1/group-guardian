@@ -68,7 +68,7 @@ async def welcome_and_mute(client, message):
         await asyncio.sleep(180)  # Aspetta 3 minuti
         if new_member.id not in ip_memory:
             await ban_user(client, message.chat.id, new_member.id, f"{new_member.first_name or new_member.username} non ha passato la verifica ed è stato bannato.")
-            await client.delete_messages(message.chat.id, welcome_message.message_id)
+            await client.delete_messages(message.chat.id, [welcome_message.id])
 
 @bot.on_message(filters.regex(r"^/start verifica_\d+$"))
 async def verifica_callback(client, message):
@@ -84,30 +84,10 @@ async def verifica_callback(client, message):
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
-                for duplicate_user_id in duplicate_users:
+                for duplicate_user await ban_user(client_id in duplicate_users:
                     await ban_user(client, message.chat.id, int(duplicate_user_id), "Account multiplo rilevato.")
-                await ban_user(client, message.chat.id, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+               , message.chat.id, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
             else:
                 ip_memory[user_id] = ip_address
-                confirmation_message = await client.send_message(message.chat.id, f"Verifica completata con successo per {message.from_user.first_name or message.from_user.username}.")
-                await client.send_message(user_id, "Verifica completata con successo.")
-                await client.restrict_chat_member(
-                    message.chat.id,
-                    user_id,
-                    ChatPermissions(
-                        can_send_messages=True,
-                        can_send_media_messages=True,
-                        can_send_other_messages=True,
-                        can_add_web_page_previews=True
-                    )
-                )
-
-@bot.on_callback_query(filters.regex(r"unban_"))
-async def unban_callback(client, callback_query):
-    user_id = int(callback_query.data.split("_")[1])
-    chat_id = callback_query.message.chat.id
-    await unban_user(client, chat_id, user_id)
-    await client.send_message(chat_id, f"{user_id} è stato sbloccato.")
-
-# Avvia il bot
-bot.run()
+                await client.send_message(message.chat.id, f"Verifica completata con successo per {message.from_user.first_name or message.from_user.username}.")
+                await client.send
