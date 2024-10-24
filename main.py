@@ -46,7 +46,8 @@ def is_duplicate_ip(ip_address):
 # Funzione per bannare l'utente
 async def ban_user(client, chat_id, user_id, reason):
     await client.ban_chat_member(chat_id, user_id)
-    await client.send_message(chat_id, reason)
+    ban_message = await client.send_message(chat_id, reason)
+    return ban_message.message_id
 
 # Funzione per sbloccare l'utente
 async def unban_user(client, chat_id, user_id):
@@ -82,8 +83,8 @@ async def welcome_and_mute(client, message):
         await asyncio.sleep(180)  # Aspetta 3 minuti
         
         if new_member.id not in ip_memory:
-            await ban_user(client, message.chat.id, new_member.id, f"{new_member.first_name or new_member.username} non ha passato la verifica ed è stato bannato.")
-            await client.delete_messages(message.chat.id, [welcome_message.message_id])
+            ban_msg_id = await ban_user(client, message.chat.id, new_member.id, f"{new_member.first_name or new_member.username} non ha passato la verifica ed è stato bannato.")
+            await client.delete_messages(message.chat.id, [welcome_message.message_id, ban_msg_id])
 
 @bot.on_message(filters.regex(r"^/start verifica_\d+$"))
 async def verifica_callback(client, message):
@@ -95,20 +96,20 @@ async def verifica_callback(client, message):
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
         if country_code != "IT":
-            ban_msg = await ban_user(client, message.chat.id, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+            ban_msg_id = await ban_user(client, message.chat.id, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
             if message.chat.id not in message_ids:
                 message_ids[message.chat.id] = []
-            message_ids[message.chat.id].append(ban_msg.message_id)
+            message_ids[message.chat.id].append(ban_msg_id)
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
                 for duplicate_user_id in duplicate_users:
-                    ban_msg_dup = await ban_user(client, message.chat.id, int(duplicate_user_id), "Account multiplo rilevato.")
+                    ban_msg_dup_id = await ban_user(client, message.chat.id, int(duplicate_user_id), "Account multiplo rilevato.")
                     if message.chat.id not in message_ids:
                         message_ids[message.chat.id] = []
-                    message_ids[message.chat.id].append(ban_msg_dup.message_id)
-                ban_msg_multi = await ban_user(client, message.chat.id, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
-                message_ids[message.chat.id].append(ban_msg_multi.message_id)
+                    message_ids[message.chat.id].append(ban_msg_dup_id)
+                ban_msg_multi_id = await ban_user(client, message.chat.id, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+                message_ids[message.chat.id].append(ban_msg_multi_id)
             else:
                 ip_memory[user_id] = ip_address
                 confirmation_message = await client.send_message(message.chat.id, f"Verifica completata con successo per {message.from_user.first_name or message.from_user.username}.")
