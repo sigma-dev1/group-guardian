@@ -83,7 +83,8 @@ async def ban_user(client, chat_id, user_id, reason):
 # Funzione per sbloccare l'utente
 async def unban_user(client, chat_id, user_id):
     await client.unban_chat_member(chat_id, user_id)
-    await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
+    if user_id not in unbanned_users:
+        await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
     unbanned_users.add(user_id)
 
 @bot.on_message(filters.new_chat_members)
@@ -144,8 +145,8 @@ async def verifica_callback(client, message):
                     ChatPermissions(
                         can_send_messages=True,
                         can_send_media_messages=True,
-                        can_send_other_messages=True,
-                        can_add_web_page_previews=True
+                        can send other messages,
+                        can add web page previews
                     )
                 )
 
@@ -154,7 +155,8 @@ async def unban_callback(client, callback_query):
     user_id = int(callback_query.data.split("_")[1])
     chat_id = callback_query.message.chat.id
     await unban_user(client, chat_id, user_id)
-    await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
+    if user_id not in unbanned_users:
+        await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
     bot_messages.append(callback_query.message.id)
 
 # Comando per cancellare i messaggi del bot
