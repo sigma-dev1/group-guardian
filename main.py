@@ -1,5 +1,6 @@
 import requests
 import logging
+import socket
 from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
 import config
@@ -24,16 +25,45 @@ unbanned_users = set()
 verifica_tasks = {}
 bot_messages = []
 
+# Funzione per ottenere l'hostname
+def get_hostname(ip):
+    """Retrieve hostname for the given IP."""
+    try:
+        return socket.gethostbyaddr(ip)[0]
+    except socket.herror:
+        return None
+
+# Funzione per ottenere il proprio IP esterno
+def get_my_ip():
+    """Retrieve the external IP address."""
+    try:
+        return requests.get('https://icanhazip.com').text.strip()
+    except Exception as e:
+        logging.error(f"Errore nel recupero dell'IP esterno: {e}")
+        return None
+
+# Funzione per ottenere i dati whois
+async def get_whois_info(ip):
+    """Retrieve whois data for the given IP."""
+    try:
+        response = await asyncio.to_thread(requests.get, f"http://ip-api.com/json/{ip}")
+        data = response.json()
+        hostname = get_hostname(ip)
+        if hostname:
+            logging.info(f"Hostname: {hostname}")
+        return data
+    except Exception as e:
+        logging.error(f"Errore nel recupero dei dati whois: {e}")
+        return None
+
 # Funzione per ottenere l'IP e la geolocalizzazione
 async def get_ip_and_location():
-    try:
-        response = await asyncio.to_thread(requests.get, "https://ipapi.co/json")
-        response.raise_for_status()
-        data = response.json()
-        return data["ip"], data["country_code"]
-    except requests.RequestException as e:
-        logging.error("Errore nella richiesta dell'IP: %s", e)
-        return None, None
+    ip = get_my_ip()
+    if ip:
+        data = await get_whois_info(ip)
+        if data:
+            return data["query"], data["countryCode"]
+    return None, None
 
 # Funzione per confrontare gli IP
 def is_duplicate_ip(ip_address):
@@ -55,7 +85,6 @@ async def unban_user(client, chat_id, user_id):
     await client.unban_chat_member(chat_id, user_id)
     await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
     unbanned_users.add(user_id)
-    bot_messages.append(callback_query.message.id)
 
 @bot.on_message(filters.new_chat_members)
 async def welcome_and_mute(client, message):
@@ -126,7 +155,6 @@ async def unban_callback(client, callback_query):
     chat_id = callback_query.message.chat.id
     await unban_user(client, chat_id, user_id)
     await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
-    unbanned_users.add(user_id)
     bot_messages.append(callback_query.message.id)
 
 # Comando per cancellare i messaggi del bot
