@@ -26,6 +26,7 @@ GROUP_IDS = [
 
 # Memoria per gli IP
 ip_memory = {}
+message_ids = []
 
 # Funzione per ottenere l'IP e la geolocalizzazione
 async def get_ip_and_location():
@@ -52,6 +53,12 @@ async def unban_user(client, chat_id, user_id):
     await client.unban_chat_member(chat_id, user_id)
     await client.send_message(chat_id, f"{user_id} è stato sbloccato.")
 
+# Funzione per eliminare i messaggi dopo 4 ore
+async def delete_messages_after_time(client, chat_id, message_ids):
+    await asyncio.sleep(14400)  # Aspetta 4 ore
+    for msg_id in message_ids:
+        await client.delete_messages(chat_id, msg_id)
+
 @bot.on_message(filters.new_chat_members)
 async def welcome_and_mute(client, message):
     for new_member in message.new_chat_members:
@@ -65,10 +72,11 @@ async def welcome_and_mute(client, message):
         button = InlineKeyboardButton(text="✅ Verifica", url=verification_link)
         keyboard = InlineKeyboardMarkup([[button]])
         welcome_message = await message.reply_text(f"Benvenuto {new_member.first_name}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
+        message_ids.append(welcome_message.message_id)
         await asyncio.sleep(180)  # Aspetta 3 minuti
         if new_member.id not in ip_memory:
             await ban_user(client, message.chat.id, new_member.id, f"{new_member.first_name} {new_member.last_name} non ha passato la verifica ed è stato bannato.")
-            await client.delete_messages(message.chat.id, welcome_message.message_id)
+            await client.delete_messages(message.chat.id, [welcome_message.message_id])
 
 @bot.on_message(filters.regex(r"^/start verifica_\d+$"))
 async def verifica_callback(client, message):
@@ -80,16 +88,20 @@ async def verifica_callback(client, message):
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
         if country_code != "IT":
-            await ban_user(client, message.chat.id, user_id, f"{message.from_user.first_name} {message.from_user.last_name} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+            ban_msg = await ban_user(client, message.chat.id, user_id, f"{message.from_user.first_name} {message.from_user.last_name} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+            message_ids.append(ban_msg.message_id)
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
                 for duplicate_user_id in duplicate_users:
-                    await ban_user(client, message.chat.id, int(duplicate_user_id), "Account multiplo rilevato.")
-                await ban_user(client, message.chat.id, user_id, f"{message.from_user.first_name} {message.from_user.last_name} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+                    ban_msg_dup = await ban_user(client, message.chat.id, int(duplicate_user_id), "Account multiplo rilevato.")
+                    message_ids.append(ban_msg_dup.message_id)
+                ban_msg_multi = await ban_user(client, message.chat.id, user_id, f"{message.from_user.first_name} {message.from_user.last_name} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+                message_ids.append(ban_msg_multi.message_id)
             else:
                 ip_memory[user_id] = ip_address
                 confirmation_message = await client.send_message(message.chat.id, f"Verifica completata con successo per {message.from_user.first_name} {message.from_user.last_name}.")
+                message_ids.append(confirmation_message.message_id)
                 await client.send_message(user_id, "Verifica completata con successo.")
                 await client.restrict_chat_member(
                     message.chat.id,
@@ -111,3 +123,7 @@ async def unban_callback(client, callback_query):
 
 # Avvia il bot
 bot.run()
+
+# Elimina i messaggi dopo 4 ore
+for group_id in GROUP_IDS:
+    asyncio.run(delete_messages_after_time(bot, group_id, message_ids))
