@@ -53,10 +53,14 @@ async def unban_user(client, chat_id, user_id):
     await client.unban_chat_member(chat_id, user_id)
     await client.send_message(chat_id, f"{user_id} è stato sbloccato.")
 
-# Funzione per eliminare i messaggi dopo 1 ora
-async def delete_messages_after_time(client, chat_id, message_ids):
-    await asyncio.sleep(3600)  # Aspetta 1 ora
-    await client.delete_messages(chat_id, message_ids)
+# Comando per cancellare i messaggi del bot
+@bot.on_message(filters.command("cancella"))
+async def cancella(client, message):
+    if message.chat.id in message_ids:
+        for msg_id in message_ids[message.chat.id]:
+            await client.delete_messages(message.chat.id, msg_id)
+        message_ids[message.chat.id] = []
+        await message.reply_text("Messaggi cancellati con successo.")
 
 @bot.on_message(filters.new_chat_members)
 async def welcome_and_mute(client, message):
@@ -108,8 +112,8 @@ async def verifica_callback(client, message):
                     ChatPermissions(
                         can_send_messages=True,
                         can_send_media_messages=True,
-                        can_send_other_messages=True,
-                        can_add_web_page_previews=True
+                        can send other messages=True,
+                        can add web page previews=True
                     )
                 )
 
@@ -122,7 +126,3 @@ async def unban_callback(client, callback_query):
 
 # Avvia il bot
 bot.run()
-
-# Elimina i messaggi dopo 1 ora per ogni gruppo
-for group_id in GROUP_IDS:
-    asyncio.run(delete_messages_after_time(bot, group_id, message_ids.get(group_id, [])))
