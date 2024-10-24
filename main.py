@@ -15,14 +15,8 @@ bot = Client(
     api_hash=config.API_HASH
 )
 
-GROUP_IDS = [
-    -1001903226568,
-    -1001630505916,
-    -1001426643861,
-    -1001509283453,
-    -1002239549979,
-    -1002268606954
-]
+# ID del gruppo specifico
+GROUP_ID = -1002202385937
 
 # Memoria per gli IP
 ip_memory = {}
@@ -67,7 +61,7 @@ async def welcome_and_mute(client, message):
         keyboard = InlineKeyboardMarkup([[button]])
         welcome_message = await message.reply_text(f"Benvenuto {new_member.first_name or new_member.username}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
         
-        task = asyncio.create_task(timer(client, message.chat.id, new_member.id, welcome_message.message_id))
+        task = asyncio.create_task(timer(client, message.chat.id, new_member.id, welcome_message.id))
         verifica_tasks[new_member.id] = task
 
 async def timer(client, chat_id, user_id, message_id):
@@ -89,32 +83,27 @@ async def verifica_callback(client, message):
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
         if country_code != "IT":
-            for group_id in GROUP_IDS:
-                await ban_user(client, group_id, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+            await ban_user(client, GROUP_ID, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
                 for duplicate_user_id in duplicate_users:
-                    for group_id in GROUP_IDS:
-                        await ban_user(client, group_id, int(duplicate_user_id), "Account multiplo rilevato.")
-                for group_id in GROUP_IDS:
-                    await ban_user(client, group_id, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+                    await ban_user(client, GROUP_ID, int(duplicate_user_id), "Account multiplo rilevato.")
+                await ban_user(client, GROUP_ID, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
             else:
                 ip_memory[user_id] = ip_address
-                for group_id in GROUP_IDS:
-                    confirmation_message = await client.send_message(group_id, f"Verifica completata con successo per {message.from_user.first_name or message.from_user.username}.")
+                await client.send_message(GROUP_ID, f"Verifica completata con successo per {message.from_user.first_name or message.from_user.username}.")
                 await client.send_message(user_id, "Verifica completata con successo.")
-                for group_id in GROUP_IDS:
-                    await client.restrict_chat_member(
-                        group_id,
-                        user_id,
-                        ChatPermissions(
-                            can_send_messages=True,
-                            can_send_media_messages=True,
-                            can_send_other_messages=True,
-                            can_add_web_page_previews=True
-                        )
+                await client.restrict_chat_member(
+                    GROUP_ID,
+                    user_id,
+                    ChatPermissions(
+                        can_send_messages=True,
+                        can_send_media_messages=True,
+                        can_send_other_messages=True,
+                        can_add_web_page_previews=True
                     )
+                )
 
 @bot.on_callback_query(filters.regex(r"unban_"))
 async def unban_callback(client, callback_query):
