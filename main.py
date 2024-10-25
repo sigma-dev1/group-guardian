@@ -138,7 +138,7 @@ async def verifica_callback(client, message):
                     f"**Nome**: {message.from_user.first_name}\n"
                     f"**ID**: {user_id}\n\n"
                     f"**Dati Secondo VoIP**\n"
-                    f"**Username**: {duplicate_users[0]}\n"
+                    f"**Username**: {'Unknown'}\n"  # Sostituire con il vero username se disponibile
                     f"**Nome**: {'Unknown'}\n"  # Sostituire con il vero nome se disponibile
                     f"**ID**: {duplicate_users[0]}\n\n"
                     f"Questi utenti sono stati bannati per essere account multipli."
@@ -152,7 +152,7 @@ async def verifica_callback(client, message):
                 bot_messages.append(unban_message.id)
             else:
                 ip_memory[user_id] = ip_address
-                confirmation_message = await client.send_message(GROUP_ID, f"Verifica completata con successo per {message.from_user.first_name or new_member.username}.")
+                confirmation_message = await client.send_message(GROUP_ID, f"Verifica completata con successo per {message.from_user.first_name}.")
                 bot_messages.append(confirmation_message.id)
                 await client.send_message(user_id, "Verifica completata con successo.")
                 await client.restrict_chat_member(
