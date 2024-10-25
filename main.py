@@ -25,6 +25,9 @@ unbanned_users = set()
 verifica_tasks = {}
 bot_messages = []
 
+# Lista dei codici paese in Europa esclusa la Russia
+EUROPE_COUNTRY_CODES = ['AL', 'AD', 'AM', 'AT', 'AZ', 'BY', 'BE', 'BA', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'GE', 'DE', 'GR', 'HU', 'IS', 'IE', 'IT', 'KZ', 'XK', 'LV', 'LI', 'LT', 'LU', 'MT', 'MD', 'MC', 'ME', 'NL', 'MK', 'NO', 'PL', 'PT', 'RO', 'SM', 'RS', 'SK', 'SI', 'ES', 'SE', 'CH', 'TR', 'UA', 'GB', 'VA']
+
 # Funzione per ottenere l'hostname
 def get_hostname(ip):
     """Retrieve hostname for the given IP."""
@@ -46,7 +49,7 @@ def get_my_ip():
 async def get_whois_info(ip):
     """Retrieve whois data for the given IP."""
     try:
-        response = await asyncio.to_thread(requests.get, f"https://ipinfo.io/{ip}/json?token={config.IPINFO_TOKEN}")
+        response = await asyncio.to_thread(requests.get, f"http://ip-api.com/json/{ip}")
         data = response.json()
         hostname = get_hostname(ip)
         if hostname:
@@ -62,7 +65,7 @@ async def get_ip_and_location():
     if ip:
         data = await get_whois_info(ip)
         if data:
-            return data["ip"], data["country"]
+            return data["query"], data["countryCode"]
     return None, None
 
 # Funzione per confrontare gli IP
@@ -122,7 +125,7 @@ async def verifica_callback(client, message):
     if ip_address:
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
-        if country_code != "IT":
+        if country_code not in EUROPE_COUNTRY_CODES:
             await ban_user(client, GROUP_ID, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
         else:
             duplicate_users = is_duplicate_ip(ip_address)
