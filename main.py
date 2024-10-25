@@ -141,7 +141,7 @@ async def verifica_callback(client, message):
                     f"**Username**: {'Unknown'}\n"  # Sostituire con il vero username se disponibile
                     f"**Nome**: {'Unknown'}\n"  # Sostituire con il vero nome se disponibile
                     f"**ID**: {duplicate_users[0]}\n\n"
-                    f"Questi utenti sono stati bannati per essere account multipli."
+                    f"⚠️ Questi utenti sono stati bannati per essere account multipli."
                 )
                 for duplicate_user_id in user_ids:
                     await ban_user(client, GROUP_ID, duplicate_user_id, reason)
@@ -161,8 +161,8 @@ async def verifica_callback(client, message):
                     ChatPermissions(
                         can_send_messages=True,
                         can_send_media_messages=True,
-                        can_send_other_messages=True,
-                        can_add_web_page_previews=True
+                        can send other messages,
+                        can add web page previews
                     )
                 )
 
