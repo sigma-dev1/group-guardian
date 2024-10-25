@@ -131,8 +131,20 @@ async def verifica_callback(client, message):
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
                 user_ids = [user_id] + duplicate_users
+                reason = (
+                    f"🛑 **Utenti VoIP rilevati** 🛑\n\n"
+                    f"**Dati Primo VoIP**\n"
+                    f"**Username**: {message.from_user.username}\n"
+                    f"**Nome**: {message.from_user.first_name}\n"
+                    f"**ID**: {user_id}\n\n"
+                    f"**Dati Secondo VoIP**\n"
+                    f"**Username**: {duplicate_users[0]}\n"
+                    f"**Nome**: {'Unknown'}\n"  # Sostituire con il vero nome se disponibile
+                    f"**ID**: {duplicate_users[0]}\n\n"
+                    f"Questi utenti sono stati bannati per essere account multipli."
+                )
                 for duplicate_user_id in user_ids:
-                    await ban_user(client, GROUP_ID, duplicate_user_id, f"{message.from_user.first_name or message.from_user.username} e {duplicate_user_id} sono risultati essere account multipli.")
+                    await ban_user(client, GROUP_ID, duplicate_user_id, reason)
                 # Aggiungi pulsante di sblocco per tutti gli utenti bannati
                 unban_button = InlineKeyboardButton(text="🔓 Unbanna", callback_data=f"unban_{'_'.join(map(str, user_ids))}")
                 unban_keyboard = InlineKeyboardMarkup([[unban_button]])
