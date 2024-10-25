@@ -46,7 +46,7 @@ def get_my_ip():
 async def get_whois_info(ip):
     """Retrieve whois data for the given IP."""
     try:
-        response = await asyncio.to_thread(requests.get, f"http://ip-api.com/json/{ip}")
+        response = await asyncio.to_thread(requests.get, f"https://ipapi.co/{ip}/json")
         data = response.json()
         hostname = get_hostname(ip)
         if hostname:
@@ -62,7 +62,7 @@ async def get_ip_and_location():
     if ip:
         data = await get_whois_info(ip)
         if data:
-            return data["query"], data["countryCode"]
+            return data["ip"], data["country_code"]
     return None, None
 
 # Funzione per confrontare gli IP
@@ -74,18 +74,14 @@ async def ban_user(client, chat_id, user_id, reason):
     await client.ban_chat_member(chat_id, user_id)
     ban_message = await client.send_message(chat_id, reason)
     bot_messages.append(ban_message.id)
-    # Aggiungi pulsante di sblocco
-    unban_button = InlineKeyboardButton(text="🔓 Unbanna", callback_data=f"unban_{user_id}")
-    unban_keyboard = InlineKeyboardMarkup([[unban_button]])
-    unban_message = await client.send_message(chat_id, "Se questo utente è stato bannato per errore, clicca qui per sbloccarlo.", reply_markup=unban_keyboard)
-    bot_messages.append(unban_message.id)
 
-# Funzione per sbloccare l'utente
-async def unban_user(client, chat_id, user_id):
-    await client.unban_chat_member(chat_id, user_id)
-    if user_id not in unbanned_users:
-        await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
-    unbanned_users.add(user_id)
+# Funzione per sbloccare gli utenti
+async def unban_users(client, chat_id, user_ids):
+    for user_id in user_ids:
+        await client.unban_chat_member(chat_id, user_id)
+        if user_id not in unbanned_users:
+            await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
+        unbanned_users.add(user_id)
 
 @bot.on_message(filters.new_chat_members)
 async def welcome_and_mute(client, message):
@@ -131,12 +127,17 @@ async def verifica_callback(client, message):
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
-                for duplicate_user_id in duplicate_users:
-                    await ban_user(client, GROUP_ID, int(duplicate_user_id), "Account multiplo rilevato.")
-                await ban_user(client, GROUP_ID, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per essere un account multiplo.")
+                user_ids = [user_id] + duplicate_users
+                for duplicate_user_id in user_ids:
+                    await ban_user(client, GROUP_ID, duplicate_user_id, f"{message.from_user.first_name or message.from_user.username} e {duplicate_user_id} sono risultati essere account multipli.")
+                # Aggiungi pulsante di sblocco per tutti gli utenti bannati
+                unban_button = InlineKeyboardButton(text="🔓 Unbanna", callback_data=f"unban_{'_'.join(map(str, user_ids))}")
+                unban_keyboard = InlineKeyboardMarkup([[unban_button]])
+                unban_message = await client.send_message(GROUP_ID, "Se questi utenti sono stati bannati per errore, clicca qui per sbloccarli.", reply_markup=unban_keyboard)
+                bot_messages.append(unban_message.id)
             else:
                 ip_memory[user_id] = ip_address
-                confirmation_message = await client.send_message(GROUP_ID, f"Verifica completata con successo per {message.from_user.first_name or message.from_user.username}.")
+                confirmation_message = await client.send_message(GROUP_ID, f"Verifica completata con successo per {message.from_user.first_name or new_member.username}.")
                 bot_messages.append(confirmation_message.id)
                 await client.send_message(user_id, "Verifica completata con successo.")
                 await client.restrict_chat_member(
@@ -152,11 +153,9 @@ async def verifica_callback(client, message):
 
 @bot.on_callback_query(filters.regex(r"unban_"))
 async def unban_callback(client, callback_query):
-    user_id = int(callback_query.data.split("_")[1])
+    user_ids = list(map(int, callback_query.data.split("_")[1:]))
     chat_id = callback_query.message.chat.id
-    await unban_user(client, chat_id, user_id)
-    if user_id not in unbanned_users:
-        await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
+    await unban_users(client, chat_id, user_ids)
     bot_messages.append(callback_query.message.id)
 
 # Comando per cancellare i messaggi del bot
