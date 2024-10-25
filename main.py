@@ -46,7 +46,7 @@ def get_my_ip():
 async def get_whois_info(ip):
     """Retrieve whois data for the given IP."""
     try:
-        response = await asyncio.to_thread(requests.get, f"https://ipapi.co/{ip}/json")
+        response = await asyncio.to_thread(requests.get, f"https://ipinfo.io/{ip}/json?token={config.IPINFO_TOKEN}")
         data = response.json()
         hostname = get_hostname(ip)
         if hostname:
@@ -62,7 +62,7 @@ async def get_ip_and_location():
     if ip:
         data = await get_whois_info(ip)
         if data:
-            return data["ip"], data["country_code"]
+            return data["ip"], data["country"]
     return None, None
 
 # Funzione per confrontare gli IP
