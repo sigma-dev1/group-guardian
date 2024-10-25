@@ -130,11 +130,6 @@ async def verifica_callback(client, message):
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
-                # Recupera i dati per ogni utente duplicato
-                user_data = {}
-                for duplicate_user_id in duplicate_users:
-                    user_data[duplicate_user_id] = await client.get_chat(duplicate_user_id)
-
                 user_ids = [user_id] + duplicate_users
                 reason = (
                     f"🛑 **Utenti VoIP rilevati** 🛑\n\n"
@@ -142,16 +137,14 @@ async def verifica_callback(client, message):
                     f"**Username**: {message.from_user.username}\n"
                     f"**Nome**: {message.from_user.first_name}\n"
                     f"**ID**: {user_id}\n\n"
-                    f"**Dati Secondo VoIP**\n"
+                    f"**Dati Duplicati**:\n"
                 )
-
-                # Aggiungi i dati degli utenti duplicati
                 for dup_id in duplicate_users:
-                    dup_user = user_data[dup_id]
+                    dup_user = await client.get_chat(dup_id)
                     reason += (
                         f"**Username**: {dup_user.username or 'Unknown'}\n"
                         f"**Nome**: {dup_user.first_name or 'Unknown'}\n"
-                        f"**ID**: {dup_id}\n"
+                        f"**ID**: {dup_id}\n\n"
                     )
 
                 reason += "⚠️ Questi utenti sono stati bannati per essere account multipli."
@@ -159,7 +152,7 @@ async def verifica_callback(client, message):
                 # Bannare tutti gli utenti
                 for duplicate_user_id in user_ids:
                     await ban_user(client, GROUP_ID, duplicate_user_id, reason)
-                
+
                 # Aggiungi pulsante di sblocco per tutti gli utenti bannati
                 unban_button = InlineKeyboardButton(text="🔓 Unbanna", callback_data=f"unban_{'_'.join(map(str, user_ids))}")
                 unban_keyboard = InlineKeyboardMarkup([[unban_button]])
@@ -199,7 +192,12 @@ async def delete_bot_messages(client, message):
 async def auto_delete_messages():
     while True:
         await asyncio.sleep(7200)  # Aspetta 2 ore
-        await delete_bot_messages(client, message)  # Sostituisci con il tuo chat_id
+        for msg_id in bot_messages:
+            await bot.delete_messages(GROUP_ID, msg_id)
+        bot_messages.clear()
 
-# Esegui il bot
+# Avvia il task di auto-cancellazione
+bot.add_handler(auto_delete_messages())
+
+# Avvia il bot
 bot.run()
