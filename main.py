@@ -125,46 +125,46 @@ async def verifica_callback(client, message):
     if ip_address:
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
-        # Controllo per account multipli
-        duplicate_users = is_duplicate_ip(ip_address)
-        if duplicate_users:
-            reason = (
-                f"🛑 **Utenti VoIP Rilevati** 🛑\n\n"
-                f"**Account Multipli Rilevati:**\n"
-                f"**Nome:** {message.from_user.first_name or 'Sconosciuto'} {message.from_user.last_name or ''}\n"
-                f"**ID:** {user_id}\n"
-                f"**Lista Utenti Duplicati:**\n"
-            )
-            for dup_id in duplicate_users:
-                dup_user = await client.get_chat(dup_id)
-                reason += (
-                    f"- **Nome:** {dup_user.first_name or 'Sconosciuto'} {dup_user.last_name or ''}\n"
-                    f"  **ID:** {dup_id}\n"
-                )
-            reason += "⚠️ Questi utenti sono stati bannati per essere account multipli."
-            
-            for duplicate_user_id in [user_id] + duplicate_users:
-                await ban_user(client, GROUP_ID, duplicate_user_id, reason)
-            
-            # Aggiungi pulsante di sblocco per tutti gli utenti bannati
-            unban_button = InlineKeyboardButton(text="🔓 Unbanna", callback_data=f"unban_{'_'.join(map(str, [user_id] + duplicate_users))}")
-            unban_keyboard = InlineKeyboardMarkup([[unban_button]])
-            unban_message = await client.send_message(GROUP_ID, "Se questi utenti sono stati bannati per errore, clicca qui per sbloccarli.", reply_markup=unban_keyboard)
-            bot_messages.append(unban_message.id)
+        if country_code not in EUROPE_COUNTRY_CODES:
+            await ban_user(client, GROUP_ID, user_id, f"{message.from_user.first_name or message.from_user.username} è stato bannato perché il tuo IP è estero.")
         else:
-            ip_memory[user_id] = ip_address
-            confirmation_message = await client.send_message(GROUP_ID, f"Verifica completata con successo per {message.from_user.first_name}.")
-            bot_messages.append(confirmation_message.id)
-            await client.send_message(user_id, "Verifica completata con successo.")
-            await client.restrict_chat_member(
-                GROUP_ID,
-                user_id,
-                ChatPermissions(
-                    can_send_messages=True,
-                    can_send_media_messages=True,
-                    can_add_web_page_previews=True
+            duplicate_users = is_duplicate_ip(ip_address)
+            if duplicate_users:
+                user_ids = [user_id] + duplicate_users
+                reason = (
+                    f"🛑 **Utenti VoIP Rilevati** 🛑\n\n"
+                    f"**Account Multipli Rilevati:**\n"
+                    f"**Nome:** {message.from_user.first_name}\n"
+                    f"**ID:** {user_id}\n"
+                    f"**Lista Utenti Duplicati:**\n"
                 )
-            )
+                for duplicate_user_id in duplicate_users:
+                    reason += f" - **Nome:** Unknown\n  **ID:** {duplicate_user_id}\n"
+                
+                reason += "⚠️ Questi utenti sono stati bannati per essere account multipli."
+                await ban_user(client, GROUP_ID, user_id, reason)
+                for duplicate_user_id in duplicate_users:
+                    await ban_user(client, GROUP_ID, duplicate_user_id, reason)
+                
+                # Aggiungi pulsante di sblocco per tutti gli utenti bannati
+                unban_button = InlineKeyboardButton(text="🔓 Unbanna", callback_data=f"unban_{'_'.join(map(str, user_ids))}")
+                unban_keyboard = InlineKeyboardMarkup([[unban_button]])
+                unban_message = await client.send_message(GROUP_ID, "Se questi utenti sono stati bannati per errore, clicca qui per sbloccarli.", reply_markup=unban_keyboard)
+                bot_messages.append(unban_message.id)
+            else:
+                ip_memory[user_id] = ip_address
+                confirmation_message = await client.send_message(GROUP_ID, f"Verifica completata con successo per {message.from_user.first_name}.")
+                bot_messages.append(confirmation_message.id)
+                await client.send_message(user_id, "Verifica completata con successo.")
+                await client.restrict_chat_member(
+                    GROUP_ID,
+                    user_id,
+                    ChatPermissions(
+                        can_send_messages=True,
+                        can_send_media_messages=True,
+                        can_add_web_page_previews=True
+                    )
+                )
 
 @bot.on_callback_query(filters.regex(r"unban_"))
 async def unban_callback(client, callback_query):
@@ -187,6 +187,9 @@ async def auto_delete_messages():
         for msg_id in bot_messages:
             await bot.delete_messages(GROUP_ID, msg_id)
         bot_messages.clear()
+
+# Avvia il task di auto-cancellazione
+bot.add_handler(auto_delete_messages())
 
 # Avvia il bot
 bot.run()
