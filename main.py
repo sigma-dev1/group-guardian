@@ -9,6 +9,7 @@ import asyncio
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
 
+# Configurazione del bot
 bot = Client(
     "group_guardian",
     bot_token=config.BOT_TOKEN,
@@ -138,14 +139,13 @@ async def verifica_callback(client, message):
                     f"**Nome**: {message.from_user.first_name}\n"
                     f"**ID**: {user_id}\n\n"
                     f"**Dati Secondo VoIP**\n"
-                    f"**Username**: {'Unknown'}\n"  # Sostituire con il vero username se disponibile
-                    f"**Nome**: {'Unknown'}\n"  # Sostituire con il vero nome se disponibile
+                    f"**Username**: {'Unknown'}\n"
+                    f"**Nome**: {'Unknown'}\n"
                     f"**ID**: {duplicate_users[0]}\n\n"
                     f"⚠️ Questi utenti sono stati bannati per essere account multipli."
                 )
                 for duplicate_user_id in user_ids:
                     await ban_user(client, GROUP_ID, duplicate_user_id, reason)
-                # Aggiungi pulsante di sblocco per tutti gli utenti bannati
                 unban_button = InlineKeyboardButton(text="🔓 Unbanna", callback_data=f"unban_{'_'.join(map(str, user_ids))}")
                 unban_keyboard = InlineKeyboardMarkup([[unban_button]])
                 unban_message = await client.send_message(GROUP_ID, "Se questi utenti sono stati bannati per errore, clicca qui per sbloccarli.", reply_markup=unban_keyboard)
@@ -161,8 +161,8 @@ async def verifica_callback(client, message):
                     ChatPermissions(
                         can_send_messages=True,
                         can_send_media_messages=True,
-                        can send other messages,
-                        can add web page previews
+                        can_send_other_messages=True,
+                        can_add_web_page_previews=True
                     )
                 )
 
@@ -173,23 +173,19 @@ async def unban_callback(client, callback_query):
     await unban_users(client, chat_id, user_ids)
     bot_messages.append(callback_query.message.id)
 
-# Comando per cancellare i messaggi del bot
 @bot.on_message(filters.command("cancella"))
 async def delete_bot_messages(client, message):
     for msg_id in bot_messages:
         await client.delete_messages(message.chat.id, msg_id)
     bot_messages.clear()
 
-# Funzione per cancellare i messaggi del bot ogni 2 ore
 async def auto_delete_messages():
     while True:
-        await asyncio.sleep(7200)  # 2 ore
+        await asyncio.sleep(7200)
         for msg_id in bot_messages:
             await bot.delete_messages(GROUP_ID, msg_id)
         bot_messages.clear()
 
-# Avvia il task di auto-cancellazione
 bot.add_handler(auto_delete_messages())
 
-# Avvia il bot
 bot.run()
