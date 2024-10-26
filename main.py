@@ -6,7 +6,6 @@ from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboard
 import config
 import asyncio
 
-# Configurazione del logging
 logging.basicConfig(level=logging.INFO)
 
 bot = Client(
@@ -80,11 +79,10 @@ async def welcome_and_mute(client, message):
             new_member.id,
             ChatPermissions(can_send_messages=False)
         )
-        verification_link = f"https://t.me/{client.me.username}?start=verifica_{new_member.id}"
-        button = InlineKeyboardButton(text="✅ Verifica", url=verification_link)
+        button = InlineKeyboardButton(text="✅ Completa la Verifica", url=f"https://t.me/{client.me.username}?start=verifica_{new_member.id}")
         keyboard = InlineKeyboardMarkup([[button]])
         welcome_message = await message.reply_text(
-            f"Benvenuto {new_member.first_name or new_member.username}! Completa la verifica cliccando il bottone qui sotto.",
+            f"Benvenuto {new_member.first_name or new_member.username}! Per favore, completa la verifica cliccando il bottone qui sotto.",
             reply_markup=keyboard
         )
         bot_messages.append((message.chat.id, welcome_message.id))
@@ -95,30 +93,16 @@ async def welcome_and_mute(client, message):
 async def timer(client, chat_id, user_id, message_id):
     await asyncio.sleep(180)
     if user_id not in ip_memory and user_id not in unbanned_users:
-        await ban_user(client, chat_id, [user_id], f"L'utente {user_id} non ha passato la verifica ed è stato bannato.")
+        await ban_user(client, chat_id, [user_id], f"L'utente {user_id} non ha completato la verifica ed è stato bannato.")
         await client.delete_messages(chat_id, [message_id])
 
 @bot.on_message(filters.command("start"))
 async def start_message(client, message):
     if len(message.command) > 1 and message.command[1].startswith("verifica_"):
         user_id = int(message.command[1].split("_")[1])
-        if user_id in verifica_tasks:
-            verifica_tasks[user_id].cancel()
-        ip_address, country_code = await get_ip_and_location()
-        if ip_address:
-            if country_code not in EUROPE_COUNTRY_CODES:
-                await ban_user(
-                    client, message.chat.id, [user_id],
-                    f"⚠️ **Verifica non superata** ⚠️\n\n"
-                    f"L'utente {message.from_user.first_name or message.from_user.username} non ha passato la verifica.\n"
-                    f"Per sbloccare, clicca il pulsante qui sotto."
-                )
-            else:
-                ip_memory[user_id] = ip_address
-                await client.restrict_chat_member(
-                    message.chat.id, user_id,
-                    ChatPermissions(can_send_messages=True, can_send_media_messages=True)
-                )
+        await message.reply_text(
+            "Per completare la verifica, invia il comando `/verifica` qui in privato."
+        )
     else:
         button1 = InlineKeyboardButton("🔒 Privacy and Policy", url="https://t.me/PrivacyAndPolicyCn")
         button2 = InlineKeyboardButton("➕ Aggiungimi ad un gruppo", url=f"https://t.me/{client.me.username}?startgroup=true")
@@ -133,16 +117,30 @@ async def start_message(client, message):
             reply_markup=keyboard
         )
 
-@bot.on_message(filters.command("cancella"))
-async def delete_bot_messages(client, message):
-    chat_id = message.chat.id
-    for msg_id in [msg[1] for msg in bot_messages if msg[0] == chat_id]:
-        await client.delete_messages(chat_id, msg_id)
-    bot_messages[:] = [msg for msg in bot_messages if msg[0] != chat_id]
+@bot.on_message(filters.command("verifica"))
+async def verifica_message(client, message):
+    user_id = message.from_user.id
+    if user_id in verifica_tasks:
+        verifica_tasks[user_id].cancel()
+        del verifica_tasks[user_id]
+    ip_address, country_code = await get_ip_and_location()
+    if ip_address:
+        if country_code not in EUROPE_COUNTRY_CODES:
+            await bot.send_message(
+                message.chat.id, 
+                f"⚠️ **Verifica non superata** ⚠️\n\n"
+                f"L'utente {message.from_user.first_name or message.from_user.username} non ha passato la verifica."
+            )
+        else:
+            ip_memory[user_id] = ip_address
+            await client.send_message(
+                message.chat.id, 
+                "Verifica completata con successo! Ora puoi accedere al gruppo."
+            )
 
 async def auto_delete_messages():
     while True:
-        await asyncio.sleep(7200)  # ogni 2 ore
+        await asyncio.sleep(7200)
         for chat_id, msg_id in bot_messages:
             await bot.delete_messages(chat_id, msg_id)
         bot_messages.clear()
