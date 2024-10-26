@@ -61,16 +61,27 @@ async def get_ip_and_location():
 def is_duplicate_ip(ip_address):
     return [user_id for user_id, ip in ip_memory.items() if ip == ip_address]
 
-async def ban_user(client, chat_id, user_id, reason):
-    await client.ban_chat_member(chat_id, user_id)
-    ban_message = await client.send_message(chat_id, reason)
+async def ban_user(client, chat_id, user_ids, reason):
+    # Bannare gli utenti e inviare messaggio con pulsante di sblocco
+    for user_id in user_ids:
+        await client.ban_chat_member(chat_id, user_id)
+    unban_button = InlineKeyboardButton(text="🔓 Sblocca Utenti", callback_data=f"unban_{'_'.join(map(str, user_ids))}")
+    unban_keyboard = InlineKeyboardMarkup([[unban_button]])
+    ban_message = await client.send_message(chat_id, reason, reply_markup=unban_keyboard)
     bot_messages.append(ban_message.id)
+
+@bot.on_callback_query(filters.regex(r"unban_"))
+async def unban_callback(client, callback_query):
+    user_ids = list(map(int, callback_query.data.split("_")[1:]))
+    chat_id = callback_query.message.chat.id
+    await unban_users(client, chat_id, user_ids)
+    bot_messages.append(callback_query.message.id)
 
 async def unban_users(client, chat_id, user_ids):
     for user_id in user_ids:
         await client.unban_chat_member(chat_id, user_id)
         if user_id not in unbanned_users:
-            await client.send_message(chat_id, f"{user_id} è stato sbloccato e non dovrà ripetere la verifica.")
+            await client.send_message(chat_id, f"L'utente con ID {user_id} è stato sbloccato e non dovrà ripetere la verifica.")
         unbanned_users.add(user_id)
 
 @bot.on_message(filters.new_chat_members)
@@ -87,16 +98,16 @@ async def welcome_and_mute(client, message):
         verification_link = f"https://t.me/{client.me.username}?start=verifica_{new_member.id}"
         button = InlineKeyboardButton(text="✅ Verifica", url=verification_link)
         keyboard = InlineKeyboardMarkup([[button]])
-        welcome_message = await message.reply_text(f"Benvenuto {new_member.first_name or new_member.username}! Per favore, completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
+        welcome_message = await message.reply_text(f"Benvenuto {new_member.first_name or new_member.username}! Completa la verifica cliccando il bottone qui sotto.", reply_markup=keyboard)
         bot_messages.append(welcome_message.id)
         
         task = asyncio.create_task(timer(client, message.chat.id, new_member.id, welcome_message.id))
         verifica_tasks[new_member.id] = task
 
 async def timer(client, chat_id, user_id, message_id):
-    await asyncio.sleep(180)  # Aspetta 3 minuti
+    await asyncio.sleep(180)
     if user_id not in ip_memory and user_id not in unbanned_users:
-        await ban_user(client, chat_id, user_id, f"{user_id} non ha passato la verifica ed è stato bannato.")
+        await ban_user(client, chat_id, [user_id], f"L'utente {user_id} non ha passato la verifica ed è stato bannato.")
         await client.delete_messages(chat_id, [message_id])
         bot_messages.remove(message_id)
 
@@ -113,30 +124,29 @@ async def verifica_callback(client, message):
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
         if country_code not in EUROPE_COUNTRY_CODES:
-            await ban_user(client, GROUP_ID, user_id, f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per avere un IP estero.")
+            await ban_user(client, GROUP_ID, [user_id], f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per provenienza estera.")
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
-                duplicate_users.append(user_id)
-                second_user_id = duplicate_users[1] if len(duplicate_users) > 1 else "Non Trovati"
+                all_users = [user_id] + duplicate_users
+                # Creazione del messaggio con dettagli dei duplicati
+                first_user = message.from_user
+                second_user_id = duplicate_users[0]
+                second_user_info = await client.get_chat(second_user_id)
                 
                 reason = (
                     f"🛑 **Utenti VoIP rilevati** 🛑\n\n"
                     f"**Dati Primo VoIP**\n"
-                    f"**Username**: {message.from_user.username or 'Non Trovato'}\n"
-                    f"**Nome**: {message.from_user.first_name or 'Non Trovato'}\n"
-                    f"**ID**: {user_id}\n\n"
+                    f"**Username**: {first_user.username or 'Non Trovato'}\n"
+                    f"**Nome**: {first_user.first_name or 'Non Trovato'}\n"
+                    f"**ID**: {first_user.id}\n\n"
                     f"**Dati Secondo VoIP**\n"
-                    f"**Username**: {'Non Trovato' if second_user_id == 'Non Trovati' else 'Unknown'}\n"
-                    f"**Nome**: {'Non Trovato' if second_user_id == 'Non Trovati' else 'Unknown'}\n"
+                    f"**Username**: {second_user_info.username or 'Non Trovato'}\n"  
+                    f"**Nome**: {second_user_info.first_name or 'Non Trovato'}\n"  
                     f"**ID**: {second_user_id}\n\n"
                     f"⚠️ Questi utenti sono stati bannati per essere account multipli."
                 )
-                
-                for duplicate_user_id in duplicate_users:
-                    await client.ban_chat_member(GROUP_ID, duplicate_user_id)
-                
-                await client.send_message(GROUP_ID, reason)
+                await ban_user(client, GROUP_ID, all_users, reason)
             else:
                 ip_memory[user_id] = ip_address
                 confirmation_message = await client.send_message(GROUP_ID, f"Verifica completata con successo per {message.from_user.first_name}.")
@@ -152,13 +162,6 @@ async def verifica_callback(client, message):
                         can_add_web_page_previews=True
                     )
                 )
-
-@bot.on_callback_query(filters.regex(r"unban_"))
-async def unban_callback(client, callback_query):
-    user_ids = list(map(int, callback_query.data.split("_")[1:]))
-    chat_id = callback_query.message.chat.id
-    await unban_users(client, chat_id, user_ids)
-    bot_messages.append(callback_query.message.id)
 
 @bot.on_message(filters.command("cancella"))
 async def delete_bot_messages(client, message):
