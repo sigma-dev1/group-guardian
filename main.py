@@ -124,7 +124,13 @@ async def verifica_callback(client, message):
         logging.info("IP dell'utente: %s, Codice Paese: %s", ip_address, country_code)
         
         if country_code not in EUROPE_COUNTRY_CODES:
-            await ban_user(client, GROUP_ID, [user_id], f"{message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per provenienza estera.")
+            await ban_user(client, GROUP_ID, [user_id], 
+                f"⚠️ **Bannato per Verifica non Passata** ⚠️\n\n"
+                f"L'utente {message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per provenienza estera.\n"
+                f"👉 **ID Utente**: {user_id}\n"
+                f"👉 **Username**: {message.from_user.username or 'Non Trovato'}\n"
+                f"Per sbloccare, clicca il pulsante qui sotto."
+            )
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
