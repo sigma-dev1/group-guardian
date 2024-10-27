@@ -6,7 +6,6 @@ from pyrogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboard
 import config
 import asyncio
 
-# Configurazione del logging
 logging.basicConfig(level=logging.INFO)
 
 bot = Client(
@@ -17,7 +16,7 @@ bot = Client(
 )
 
 AUTHORIZED_IDS = {7336875798, 343002941, 6849853752, 7082135434}
-GROUP_IDS = [-1002202385937, -1001426643861, -1001509283453]  # Lista di gruppi
+GROUP_IDS = [-1002202385937, -1001426643861, -1001509283453]
 ip_memory = {}
 unbanned_users = set()
 verifica_tasks = {}
@@ -48,14 +47,16 @@ async def get_ip_and_location():
 def is_duplicate_ip(ip_address):
     return [user_id for user_id, ip in ip_memory.items() if ip == ip_address]
 
-async def ban_user(client, user_ids, reason):
-    for group_id in GROUP_IDS:
-        for user_id in user_ids:
-            await client.ban_chat_member(group_id, user_id)
-        unban_button = InlineKeyboardButton("🔓 Sblocca Utenti", callback_data=f"unban_{'_'.join(map(str, user_ids))}")
-        unban_keyboard = InlineKeyboardMarkup([[unban_button]])
-        ban_message = await client.send_message(group_id, reason, reply_markup=unban_keyboard)
-        bot_messages.append(ban_message.id)
+async def ban_user(client, chat_id, user_ids, reason):
+    for user_id in user_ids:
+        try:
+            await client.ban_chat_member(chat_id, user_id)
+        except Exception as e:
+            logging.error(f"Errore nel bannare l'utente {user_id} nel gruppo {chat_id}: {e}")
+    unban_button = InlineKeyboardButton("🔓 Sblocca Utenti", callback_data=f"unban_{'_'.join(map(str, user_ids))}")
+    unban_keyboard = InlineKeyboardMarkup([[unban_button]])
+    ban_message = await client.send_message(chat_id, reason, reply_markup=unban_keyboard)
+    bot_messages.append(ban_message.id)
 
 @bot.on_callback_query(filters.regex(r"unban_"))
 async def unban_callback(client, callback_query):
@@ -65,14 +66,20 @@ async def unban_callback(client, callback_query):
 
     user_ids = list(map(int, callback_query.data.split("_")[1:]))
     for group_id in GROUP_IDS:
-        await unban_users(client, group_id, user_ids)
+        try:
+            await unban_users(client, group_id, user_ids)
+        except Exception as e:
+            logging.error(f"Errore nello sbloccare gli utenti nel gruppo {group_id}: {e}")
 
 async def unban_users(client, chat_id, user_ids):
     for user_id in user_ids:
-        await client.unban_chat_member(chat_id, user_id)
-        if user_id not in unbanned_users:
-            await client.send_message(chat_id, f"L'utente con ID {user_id} è stato sbloccato.")
-        unbanned_users.add(user_id)
+        try:
+            await client.unban_chat_member(chat_id, user_id)
+            if user_id not in unbanned_users:
+                await client.send_message(chat_id, f"L'utente con ID {user_id} è stato sbloccato.")
+            unbanned_users.add(user_id)
+        except Exception as e:
+            logging.error(f"Errore nello sbloccare l'utente {user_id} nel gruppo {chat_id}: {e}")
 
 @bot.on_message(filters.new_chat_members)
 async def welcome_and_mute(client, message):
@@ -97,7 +104,7 @@ async def welcome_and_mute(client, message):
 async def timer(client, chat_id, user_id, message_id):
     await asyncio.sleep(180)
     if user_id not in ip_memory and user_id not in unbanned_users:
-        await ban_user(client, [user_id], f"L'utente {user_id} non ha passato la verifica ed è stato bannato.")
+        await ban_user(client, chat_id, [user_id], f"L'utente {user_id} non ha passato la verifica ed è stato bannato.")
         await client.delete_messages(chat_id, [message_id])
         bot_messages.remove(message_id)
 
@@ -110,19 +117,26 @@ async def verifica_callback(client, message):
     ip_address, country_code = await get_ip_and_location()
     if ip_address:
         if country_code not in EUROPE_COUNTRY_CODES:
-            await ban_user(client, [user_id], f"L'utente {user_id} non ha passato la verifica ed è stato bannato per provenienza estera.")
+            reason = (
+                f"⚠️ **Bannato per Verifica non Passata** ⚠️\n\n"
+                f"L'utente {message.from_user.first_name or message.from_user.username} non ha passato la verifica ed è stato bannato per provenienza estera.\n"
+                f"👉 **ID Utente**: {user_id}\n"
+                f"👉 **Username**: {message.from_user.username or 'Non Trovato'}\n"
+                f"Per sbloccare, clicca il pulsante qui sotto."
+            )
+            await ban_user(client, message.chat.id, [user_id], reason)
         else:
             duplicate_users = is_duplicate_ip(ip_address)
             if duplicate_users:
                 reason = (
                     f"🛑 **Utenti VoIP rilevati** 🛑\n"
                     f"**Dati Primo VoIP**\n"
-                    f"ID: {message.from_user.id}\n\n"
+                    f"**ID**: {message.from_user.id}\n\n"
                     f"**Dati Secondo VoIP**\n"
-                    f"ID: {duplicate_users[0]}\n"
+                    f"**ID**: {duplicate_users[0]}\n"
                     f"⚠️ Questi utenti sono stati bannati per essere account multipli."
                 )
-                await ban_user(client, [user_id] + duplicate_users, reason)
+                await ban_user(client, message.chat.id, [user_id] + duplicate_users, reason)
             else:
                 ip_memory[user_id] = ip_address
                 confirmation_message = await client.send_message(message.chat.id, f"Verifica completata per {message.from_user.first_name}.")
