@@ -16,7 +16,7 @@ bot = Client(
     api_hash=config.API_HASH
 )
 
-GROUP_ID = -1002202385937
+GROUP_ID = -1002203632603
 AUTHORIZED_USERS = {6849853752, 343002941, 7583444123}  # Utenti autorizzati
 
 ip_memory = {}
