@@ -17,7 +17,7 @@ bot = Client(
 )
 
 GROUP_ID = -1002203632603
-AUTHORIZED_USERS = {6849853752, 343002941, 7583444123}  # Utenti autorizzati
+AUTHORIZED_USERS = {6849853752, 343002941, 7583444123, 7082135434}  # Utenti autorizzati
 
 ip_memory = {}
 unbanned_users = set()
